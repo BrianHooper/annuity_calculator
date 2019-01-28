@@ -108,3 +108,21 @@ while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > morta
 
 # Generate random integer starting age
 # input_age = sample(age_low:age_high, 1)
+
+# ------------------ Functions ---------------------------------
+# Function for determining Whole Life Net Single Premium Profit for company
+WNS_net_profit <- function(in_age, mat_age){
+  xEy = (lx[mat_age + 1] / lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
+  return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
+  
+}
+
+#------------------ Begin graphing -------------------------------
+
+# Graphing age effect on mortality
+age_qx_plot <- ggplot(life_table, aes(age, qx))
+age_qx_plot + ggtitle("Age Effect on Percent Mortality (qx)") + geom_point(aes(age, qx), colour="#3366FF", size=1)
+
+# Graphing ax on age
+age_ax_plot <- ggplot(life_table, aes(age, ax))
+age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), colour="#3366FF", size=1)
