@@ -152,3 +152,23 @@ for (i in 1:99){
   age_benefit_plot <-
 }
 
+profit <- 0
+for(i in 1:100) {
+  # Generate random integer starting age
+  input_age = sample(25:40, 1)
+  
+  # Pick a random death date based on mortality table
+  death_age = input_age
+  while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
+    death_age = death_age + 1
+  }
+  
+  net_premium <- WNS_net_profit(input_age, maturity_age)
+  if(death_age > maturity_age) {
+    total_annuity_payment <- (death_age - maturity_age) * 12 * monthly_annuity
+    profit <- profit + net_premium - total_annuity_payment
+  } else {
+    profit <- profit + net_premium
+  }
+}
+print(profit)
