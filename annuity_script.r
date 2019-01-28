@@ -117,7 +117,12 @@ WNS_net_profit <- function(in_age, mat_age){
   
 }
 
-WNS_net_profit(20,60)
+# Function for determining Whole Life Net Single Premium loss for company
+# Occurs only when death_age > maturity_age
+WNS_loss <- function(mat_age, death_age)
+  return ((death_age - mat_age) * monthly_annuity)
+
+
 #------------------ Begin graphing -------------------------------
 
 # Graphing age effect on mortality
@@ -127,3 +132,5 @@ age_qx_plot + ggtitle("Age Effect on Percent Mortality (qx)") + geom_point(aes(a
 # Graphing ax on age
 age_ax_plot <- ggplot(life_table, aes(age, ax))
 age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), colour="#3366FF", size=1)
+
+# Graphing profit trends after each life that is complete
