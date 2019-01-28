@@ -121,6 +121,18 @@ WNS_net_profit <- function(in_age, mat_age){
 # Occurs only when death_age > maturity_age
 WNS_loss <- function(mat_age, death_age)
   return ((death_age - mat_age) * monthly_annuity)
+# if person died before or after maturity age
+
+WNS_net_profit <- function(input_age,maturity_age,age_of_death,net_single_premium,desired_monthly_benefit)
+{
+  if (age_of_death < maturity_age){
+    profit = ((input_age - dead_age) * desired_monthly_benefit)
+  return(net_single_premium)
+  }
+    else{
+    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
+  return(net_single_premium- loss)
+}
 
 
 #------------------ Begin graphing -------------------------------
