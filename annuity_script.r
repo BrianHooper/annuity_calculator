@@ -117,6 +117,7 @@ WNS_net_profit <- function(in_age, mat_age){
   
 }
 
+WNS_net_profit(20,60)
 #------------------ Begin graphing -------------------------------
 
 # Graphing age effect on mortality
