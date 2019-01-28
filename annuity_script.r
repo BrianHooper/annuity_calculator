@@ -133,4 +133,10 @@ age_qx_plot + ggtitle("Age Effect on Percent Mortality (qx)") + geom_point(aes(a
 age_ax_plot <- ggplot(life_table, aes(age, ax))
 age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), colour="#3366FF", size=1)
 
-# Graphing profit trends after each life that is complete
+# TODO Graphing profit trends after each life that is complete - need simulation data
+
+# Graphing increasing input age with a maturity age of 65 and monthly benefit of $1000
+for (i in 1:99){
+  age_benefit_plot <-
+}
+
