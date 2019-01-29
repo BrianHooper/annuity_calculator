@@ -1,2 +1,2 @@
-input_age_start,input_age_end,maturity_age,monthly_annuity,interest_rate,term_length,iterations
-25,40,60,1000,0.05,20,100
+input_age_start,input_age_end,maturity_age,yearly_annuity,interest_rate,term_length,iterations
+25,40,60,1000,0.05,20,10000

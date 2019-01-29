@@ -19,7 +19,7 @@ user_input <- read.csv(file="input.csv", header=TRUE, sep=",")
 input_age_start = user_input[,1]
 input_age_end = user_input[,2]
 maturity_age = user_input[,3]
-monthly_annuity = user_input[,4]
+yearly_annuity = user_input[,4]
 interest_rate = user_input[,5]
 term_length = user_input[,6]
 iterations = user_input[,7]
@@ -82,7 +82,7 @@ Ax = life_table$Ax
 # @return A double representing the Net Single Premium that was paid for the policy
 WNS_profit <- function(in_age, mat_age){
   xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
-  return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
+  return(yearly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
 }
 
 # Function for determining Whole Life Net Single Premium loss for company
@@ -92,7 +92,7 @@ WNS_profit <- function(in_age, mat_age){
 # @param death_age The age in which the policy holder dies
 # @return A double representing the total paid out to the client for the policy
 WNS_loss <- function(mat_age, death_age)
-  return ((death_age - mat_age) * monthly_annuity * 12)
+  return ((death_age - mat_age) * yearly_annuity)
 
 # Calculate net profit or loss for Whole Life Net Single Premium
 #
@@ -102,18 +102,16 @@ WNS_loss <- function(mat_age, death_age)
 # @return A double representing the net profit or loss for a single policy holder
 WNS_net_profit <- function(in_age, mat_age, death_age){
   if (death_age < maturity_age){
-    #    profit = ((input_age - dead_age) * desired_monthly_benefit)
     return (WNS_profit(in_age, mat_age))
   }
   else{
-    #    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
     return (WNS_profit(in_age, mat_age) - WNS_loss(mat_age, death_age))
   }
 }
 
 # Display a single net premium price for user defined start and maturity age
-cat(sprintf("A whole life single net premium price for input age %s with maturity age %s and $ %.2f monthly benefit: $%.2f\n\n",
-            input_age_start, maturity_age, monthly_annuity,WNS_profit(input_age_start,maturity_age)))
+cat(sprintf("A whole life single net premium price for input age %s with maturity age %s and $ %.2f yearly benefit: $%.2f\n\n",
+            input_age_start, maturity_age, yearly_annuity,WNS_profit(input_age_start,maturity_age)))
 
 
 # Simulate a number of lifetimes (iterations)
@@ -163,13 +161,13 @@ profit_plot <- ggplot(x = iterations_data, y = profit_data)
 print(profit_plot + ggtitle(paste("Profit over", iterations, "Lifetimes")) + geom_point(aes(iterations_data, profit_data), colour="#3366FF", size=1) +
   xlab("Number of Lifetimes") + ylab("Profit"))
 
-# Graphing increasing age with the user-defined maturity age and monthly benefit of Net Single Premium Prices
+# Graphing increasing age with the user-defined maturity age and yearly benefit of Net Single Premium Prices
 WNS_age_data <- age[1:60]
 WNS_premium_data <- vector(mode="double", length=length(WNS_age_data))
 for (i in 1:length(WNS_age_data)){
    WNS_premium_data[i] <- WNS_profit(i, maturity_age)
 }
 age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data)
-print(profit_plot + ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", monthly_annuity,"monthly benefit")) +
+print(profit_plot + ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"yearly benefit")) +
   geom_point(aes(WNS_age_data, WNS_premium_data), colour="#3366FF", size=1) +
   xlab("Age") + ylab("Whole Life Net Single Premium Price"))
