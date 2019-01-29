@@ -111,6 +111,15 @@ WNS_net_profit <- function(in_age, mat_age, death_age){
   }
 }
 
+# Display a single net premium price for user defined start and maturity age
+cat(sprintf("A whole life single net premium price for input age %s with maturity age %s and $ %.2f monthly benefit: $%.2f\n\n",
+            input_age_start, maturity_age, monthly_annuity,WNS_profit(input_age_start,maturity_age)))
+
+
+# Simulate a number of lifetimes (iterations)
+cat(sprintf("Beginning simulation of %s lifetimes...\n\n", iterations))
+startTime <- Sys.time()
+
 profit <- 0
 for(i in 1:iterations) {
   # Generate random integer starting age
@@ -129,7 +138,13 @@ for(i in 1:iterations) {
   # Calculate profit
   profit <- profit + WNS_net_profit(input_age, maturity_age, death_age)
 }
-print(profit)
+
+endTime <- Sys.time()
+elapsedTime = endTime - startTime
+print(elapsedTime)
+
+cat(sprintf("Total profit over %s simulated lifetimes: $%.2f", iterations, profit))
+
 
 #------------------------- Graphing -------------------------------
 # Graphing age effect on mortality
