@@ -1,30 +1,35 @@
+#########################
+# Annuity Calculator    #
+#                       #
+# Brian Hooper          #
+# Heather McKinnon      #
+# Kalla Divya Chandrika #
+# CS567 - 1-29-2019     #
+#########################
+
+library(ggplot2)
+
 # Read mortality data
 mortality_data <- read.csv(file="DrewHeblerMortality.csv", header=TRUE, sep=",")
 age = mortality_data[,1]
 qx = mortality_data[,2]
 
-#lx = mortality_data[,1]
-#ax = mortality_data[,2]
-#Ax = mortality_data[,3]
-
 # Read and assign input parameters
 user_input <- read.csv(file="input.csv", header=TRUE, sep=",")
-input_age = user_input[,1]
-maturity_age = user_input[,2]
-monthly_annuity = user_input[,3]
-interest_rate = user_input[,4]
-term_length = user_input[,5]
+input_age_start = user_input[,1]
+input_age_end = user_input[,2]
+maturity_age = user_input[,3]
+monthly_annuity = user_input[,4]
+interest_rate = user_input[,5]
+term_length = user_input[,6]
+iterations = user_input[,7]
 
-# Calculated constants
+# Calculated initial variables
 d = interest_rate / (1 + interest_rate)
 im = 12 * (((1 + interest_rate) ** (1 / 12)) - 1)
 dm = 12 * (1 - (1 - d) ** (1 / 12))
 a12 = (interest_rate * d) / (im * dm)
 b12 = (interest_rate - im) / (im * dm)
-
-
-
-# ----------------- Equations added 1/27/19 ----------------------
 
 # Create life table
 life_table <- data.frame(age, qx)
@@ -43,10 +48,6 @@ for (i in 2:length(life_table$qx)) {
 
 # Add Px
 life_table$Px <- 1 - life_table$qx
-# 
-#for (i in 1:length(life_table$lx)) {
-#  life_table$Px[i] <- life_table$lx[i] / life_table$lx[i-1]
-#}
 
 # Calculate v^k
 life_table$vk <- 1/(1 + interest_rate)^life_table$k
@@ -73,45 +74,11 @@ life_table$Ax <- 1 - d * life_table$ax
 # Assigning variables for ease of use
 ax = life_table$ax
 Ax = life_table$Ax
-aX = (1 - life_table$Ax[input_age + 1]) / d
-lx = life_table$lx
-xEy = (lx[maturity_age + 1] / lx[input_age + 1]) * (1 / (1 + interest_rate)) ** (maturity_age - input_age)
-yEyn = (lx[maturity_age + term_length + 1] / lx[maturity_age + 1]) * (1 / (1 + interest_rate)) ** term_length
-
-#------------------ End added equations ---------------------
-
-# Output
-whole_net_single = monthly_annuity * 12 * (a12 * ax[maturity_age + 1] - b12) * xEy
-whole_annual_premium = whole_net_single / (aX - ax[maturity_age + 1] * xEy)
-whole_monthly_premium = (whole_net_single / (a12 * (aX - ax[maturity_age + 1] * xEy) - b12 * (1 - xEy))) / 12
-
-n_year_net_single = monthly_annuity * 12 * (a12 * (ax[maturity_age + 1] - ax[maturity_age + term_length + 1] * yEyn) - b12 * (1 - yEyn)) * xEy
-n_year_annual_premium = n_year_net_single / (aX - ax[maturity_age + 1] * xEy)
-n_year_monthly_premium = (n_year_net_single / (a12 * (aX - ax[maturity_age + 1] * xEy) - b12 * (1 - xEy))) / 12
-
-# cat("Whole life:\n")
-# cat(sprintf("\tNet single: $%.2f\n", whole_net_single))
-# cat(sprintf("\tAnnual Premium: $%.2f\n", whole_annual_premium))
-# cat(sprintf("\tMonthly Premium: $%.2f\n", whole_monthly_premium))
-# 
-# cat("N-Term:\n")
-# cat(sprintf("\tNet single: $%.2f\n", n_year_net_single))
-# cat(sprintf("\tAnnual Premium: $%.2f\n", n_year_annual_premium))
-# cat(sprintf("\tMonthly Premium: $%.2f\n", n_year_monthly_premium))
-
-# Pick a random death date based on mortality table
-death_age = 1
-while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
-  death_age = death_age + 1
-}
-
-
-# Generate random integer starting age
-# input_age = sample(age_low:age_high, 1)
 
 # ------------------ Functions ---------------------------------
+
 # Function for determining Whole Life Net Single Premium Profit for company
-WNS_net_profit <- function(in_age, mat_age){
+WNS_profit <- function(in_age, mat_age){
   xEy = (lx[mat_age + 1] / lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
   return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
   
@@ -120,7 +87,7 @@ WNS_net_profit <- function(in_age, mat_age){
 # Function for determining Whole Life Net Single Premium loss for company
 # Occurs only when death_age > maturity_age
 WNS_loss <- function(mat_age, death_age)
-  return ((death_age - mat_age) * monthly_annuity)
+  return ((death_age - mat_age) * monthly_annuity * 12)
 # if person died before or after maturity age
 
 # Calculate net profit or loss for Whole Life Net Single Premium
@@ -133,9 +100,7 @@ WNS_net_profit <- function(in_age, mat_age, death_age){
 #    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
     return (WNS_profit(in_age, mat_age) - WNS_loss(mat_age, death_age))
   }
-}  
-
-
+}
 
 #------------------ Begin graphing -------------------------------
 
@@ -155,22 +120,23 @@ age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), c
   # }
 
 profit <- 0
-for(i in 1:100) {
+for(i in 1:iterations) {
   # Generate random integer starting age
-  input_age = sample(25:40, 1)
-  
+  if(input_age_start >= input_age_end) {
+    input_age = input_age_start
+  } else {
+    input_age = sample(input_age_start:input_age_end, 1)
+  }
+
   # Pick a random death date based on mortality table
   death_age = input_age
   while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
     death_age = death_age + 1
   }
-  
-  net_premium <- WNS_net_profit(input_age, maturity_age)
-  if(death_age > maturity_age) {
-    total_annuity_payment <- (death_age - maturity_age) * 12 * monthly_annuity
-    profit <- profit + net_premium - total_annuity_payment
-  } else {
-    profit <- profit + net_premium
-  }
+
+  # Calculate profit
+  profit <- profit + WNS_net_profit(input_age, maturity_age, death_age)
 }
 print(profit)
+
+
