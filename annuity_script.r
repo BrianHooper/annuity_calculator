@@ -3,7 +3,7 @@
 #                       #
 # Brian Hooper          #
 # Heather McKinnon      #
-# Kalla Divya Chandrika #
+# Divya Kalla Chandrika #
 # CS567 - 1-29-2019     #
 #########################
 
