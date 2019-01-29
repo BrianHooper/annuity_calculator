@@ -1,0 +1,84 @@
+% Compile this file once with pdflatex
+% then compile the .bib file (referenced in the last slide 
+% with the \bibliography command using bibtex
+% then recompile this file twice more with pdflatex
+% (Once for the bibliography, and another for inline citations
+
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsfonts}
+\usepackage{color}
+\usepackage{import}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{url}
+\usepackage{float}
+\usepackage{chngpage}
+\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+
+\title{\textbf{Insurance annuity calculator in R} \\ User Manual}
+\author{Brian Hooper, Heather McKinnon, Kalla Divya Chandrika  \\ Central Washington University}
+\date{Last Updated: January 29th, 2019}
+
+\begin{document}
+	\maketitle
+	
+	\section{Introduction}
+	This document describes the use and function of the \textit{Annuity calculator} written in R. The program is intended to simulate 10,000 independent customers purchasing an annuities using a mortality table. An input file provided to the program will give a initial age range that will be used to randomly select a starting age, or the age that the person will purchase an annuity product. Then, the mortality table will be used to randomly select a death age based on the distribution provided by the mortality table. This can be used to calculate the amount of profit or loss for the insurance company for an individual annuity product.
+	
+	\section{Input}
+	Two auxiliary comma-separated files are required to use the script: \textit{input.csv} and \textit{mortality.csv}. The \textit{input.csv} contains the following input parameters that should be provided to the script, shown in table \ref{description}: 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|l|}
+		\hline
+		input\_age\_start & The lower bound of the age range for purchasing annuity \\ \hline
+		input\_age\_end & The upper bound of the age range for purchasing annuity \\ \hline
+		maturity\_age & The age at which the annuity matures \\ \hline
+		monthly\_annuity & The desired monthly annuity benefit \\ \hline
+		interest\_rate & The interest rate \\ \hline
+		term\_length & The number of terms for N-year annuities \\ \hline
+		iterations & The number of simulations to run \\ \hline
+	\end{tabular}
+	\label{description}
+	\caption{Input parameter descriptions}
+\end{table}
+
+An example \textit{input.csv} file is shown in table \ref{example}. In this case, the program will simulate a group of 100 individuals, aged 25 to 40, purchasing a \$1000 annuity benefit that matures at age 60. 
+
+
+\begin{table}[H]
+	\begin{adjustwidth}{-.5in}{-.5in}  
+		\begin{tabular}{|l|l|l|l|l|l|l|}
+			\hline
+			input\_age\_start & input\_age\_end & maturity\_age & monthly\_annuity & interest\_rate & term\_length & iterations \\ \hline
+			25 & 40 & 60 & 1000 & 0.05 & 20 & 100 \\ \hline
+		\end{tabular}
+		\label{example}
+		\caption{Example \textit{input.csv} file}
+	\end{adjustwidth}
+\end{table}
+
+The \textit{mortality.csv} file should contain two columns: an \textit{age} column containing a list of integer ages, and a \textit{mortality} column containing the probability of death at each age. An example \textit{mortality.csv} file is given in table \ref{mortality}. 
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|l|}
+		\hline
+		Age & Mortality \\ \hline
+		0 & 0.02042 \\ \hline
+		1 & 0.00133 \\ \hline
+		2 & 0.00122 \\ \hline
+		... & ... \\ \hline
+		98 & 0.67499 \\ \hline
+	\end{tabular}
+	\caption{Example \textit{mortality.csv} file}
+	\label{mortality}
+\end{table}
+
+\section{Use}
+
+To invoke the program, simply use the Rscript command from the directory containing the \textit{input.csv} and \textit{mortality.csv} files. The program will output a report and a set of tables containing the expected profit or loss to the company based on the simulated business block. 
+
+\end{document}
