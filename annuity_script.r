@@ -75,29 +75,38 @@ life_table$Ax <- 1 - d * life_table$ax
 ax = life_table$ax
 Ax = life_table$Ax
 
-# ------------------ Functions ---------------------------------
-
 # Function for determining Whole Life Net Single Premium Profit for company
+#
+# @param in_age The input age for beginning the insurance policy
+# @param mat_age The age in which the policy matures
+# @return A double representing the Net Single Premium that was paid for the policy
 WNS_profit <- function(in_age, mat_age){
   xEy = (lx[mat_age + 1] / lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
   return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
-  
 }
 
 # Function for determining Whole Life Net Single Premium loss for company
 # Occurs only when death_age > maturity_age
+# 
+# @param mat_age The age in which the policy matures
+# @param death_age The age in which the policy holder dies
+# @return A double representing the total paid out to the client for the policy
 WNS_loss <- function(mat_age, death_age)
   return ((death_age - mat_age) * monthly_annuity * 12)
-# if person died before or after maturity age
 
 # Calculate net profit or loss for Whole Life Net Single Premium
+#
+# @param in_age The input age for beginning the insurance policy
+# @param mat_age The age in which the policy matures
+# @param death_age The age in which the policy holder dies
+# @return A double representing the net profit or loss for a single policy holder
 WNS_net_profit <- function(in_age, mat_age, death_age){
   if (death_age < maturity_age){
-#    profit = ((input_age - dead_age) * desired_monthly_benefit)
+    #    profit = ((input_age - dead_age) * desired_monthly_benefit)
     return (WNS_profit(in_age, mat_age))
   }
   else{
-#    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
+    #    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
     return (WNS_profit(in_age, mat_age) - WNS_loss(mat_age, death_age))
   }
 }
