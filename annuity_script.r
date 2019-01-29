@@ -10,7 +10,7 @@
 library(ggplot2)
 
 # Read mortality data
-mortality_data <- read.csv(file="DrewHeblerMortality.csv", header=TRUE, sep=",")
+mortality_data <- read.csv(file="mortality.csv", header=TRUE, sep=",")
 age = mortality_data[,1]
 qx = mortality_data[,2]
 
@@ -152,16 +152,16 @@ cat(sprintf("Total profit over %s simulated lifetimes: $%.2f", iterations, profi
 #------------------------- Graphing -------------------------------
 # Graphing age effect on mortality
 age_qx_plot <- ggplot(life_table, aes(age, qx))
-age_qx_plot + ggtitle("Age Effect on Percent Mortality (qx)") + geom_point(aes(age, qx), colour="#3366FF", size=1)
+print(age_qx_plot + ggtitle("Age Effect on Percent Mortality (qx)") + geom_point(aes(age, qx), colour="#3366FF", size=1))
 
 # Graphing ax on age
 age_ax_plot <- ggplot(life_table, aes(age, ax))
-age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), colour="#3366FF", size=1)
+print(age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), colour="#3366FF", size=1))
 
 # Graphing WSN premium profit trends after each life that is complete
-# profit_plot <- ggplot(x = iterations_data, y = profit_data)
-# profit_plot + ggtitle(paste("Profit over", iterations, "Lifetimes")) + geom_point(aes(iterations_data, profit_data), colour="#3366FF", size=1) +
-#   xlab("Number of Lifetimes") + ylab("Profit")
+profit_plot <- ggplot(x = iterations_data, y = profit_data)
+print(profit_plot + ggtitle(paste("Profit over", iterations, "Lifetimes")) + geom_point(aes(iterations_data, profit_data), colour="#3366FF", size=1) +
+  xlab("Number of Lifetimes") + ylab("Profit"))
 
 # Graphing increasing age with the user-defined maturity age and monthly benefit of Net Single Premium Prices
 WNS_age_data <- age[1:60]
@@ -169,7 +169,7 @@ WNS_premium_data <- vector(mode="double", length=length(WNS_age_data))
 for (i in 1:length(WNS_age_data)){
    WNS_premium_data[i] <- WNS_profit(i, maturity_age)
 }
-# age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data)
-# profit_plot + ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", monthly_annuity,"monthly benefit")) +
-#   geom_point(aes(WNS_age_data, WNS_premium_data), colour="#3366FF", size=1) +
-#   xlab("Age") + ylab("Whole Life Net Single Premium Price")
+age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data)
+print(profit_plot + ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", monthly_annuity,"monthly benefit")) +
+  geom_point(aes(WNS_age_data, WNS_premium_data), colour="#3366FF", size=1) +
+  xlab("Age") + ylab("Whole Life Net Single Premium Price"))
