@@ -123,16 +123,18 @@ WNS_loss <- function(mat_age, death_age)
   return ((death_age - mat_age) * monthly_annuity)
 # if person died before or after maturity age
 
-WNS_net_profit <- function(input_age,maturity_age,age_of_death,net_single_premium,desired_monthly_benefit)
-{
-  if (age_of_death < maturity_age){
-    profit = ((input_age - dead_age) * desired_monthly_benefit)
-  return(net_single_premium)
+# Calculate net profit or loss for Whole Life Net Single Premium
+WNS_net_profit <- function(in_age, mat_age, death_age){
+  if (death_age < maturity_age){
+#    profit = ((input_age - dead_age) * desired_monthly_benefit)
+    return (WNS_profit(in_age, mat_age))
   }
-    else{
-    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
-  return(net_single_premium- loss)
-}
+  else{
+#    loss = ((dead_age - maturity_age) * desired_monthly_benefit)
+    return (WNS_profit(in_age, mat_age) - WNS_loss(mat_age, death_age))
+  }
+}  
+
 
 
 #------------------ Begin graphing -------------------------------
@@ -145,12 +147,12 @@ age_qx_plot + ggtitle("Age Effect on Percent Mortality (qx)") + geom_point(aes(a
 age_ax_plot <- ggplot(life_table, aes(age, ax))
 age_ax_plot + ggtitle("Age Effect on Annuity (ax)") + geom_point(aes(age, ax), colour="#3366FF", size=1)
 
-# TODO Graphing profit trends after each life that is complete - need simulation data
-
-# Graphing increasing input age with a maturity age of 65 and monthly benefit of $1000
-for (i in 1:99){
-  age_benefit_plot <-
-}
+  # TODO Graphing profit trends after each life that is complete - need simulation data
+  
+  # Graphing increasing input age with a maturity age of 65 and monthly benefit of $1000
+  # for (i in 1:99){
+  #   age_benefit_plot <-
+  # }
 
 profit <- 0
 for(i in 1:100) {
