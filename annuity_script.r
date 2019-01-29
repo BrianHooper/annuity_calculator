@@ -121,6 +121,8 @@ cat(sprintf("Beginning simulation of %s lifetimes...\n\n", iterations))
 startTime <- Sys.time()
 
 profit <- 0
+profit_data <- vector(mode="double", length=iterations)
+iterations_data <- 1:iterations
 for(i in 1:iterations) {
   # Generate random integer starting age
   if(input_age_start >= input_age_end) {
@@ -132,11 +134,12 @@ for(i in 1:iterations) {
   # Pick a random death date based on mortality table
   death_age = input_age
   while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
-    death_age = death_age + 1
+    death_age = death_age + 1  
   }
 
   # Calculate profit
   profit <- profit + WNS_net_profit(input_age, maturity_age, death_age)
+  profit_data[i] <- profit
 }
 
 endTime <- Sys.time()
