@@ -101,11 +101,15 @@ WNS_loss <- function(mat_age, death_age)
 # @param death_age The age in which the policy holder dies
 # @return A double representing the net profit or loss for a single policy holder
 WNS_net_profit <- function(in_age, mat_age, death_age){
+  profit <- WNS_profit(in_age, mat_age)
   if (death_age < maturity_age){
-    return (WNS_profit(in_age, mat_age))
+    # cat(sprintf("input age: %s death age: %s Profit: %.2f\n", in_age, death_age, profit))
+    return (profit)
   }
   else{
-    return (WNS_profit(in_age, mat_age) - WNS_loss(mat_age, death_age))
+    loss <- WNS_loss(mat_age, death_age)
+    # cat(sprintf("input age: %s death age: %s Profit: %.2f loss: %.2f net: %.2f\n", in_age, death_age, profit, loss, (profit - loss)))
+    return (profit - loss)
   }
 }
 
