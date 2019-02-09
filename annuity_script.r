@@ -94,13 +94,13 @@ WNS_profit <- function(in_age, mat_age){
 WNS_loss <- function(mat_age, death_age)
   return ((death_age - mat_age) * yearly_annuity)
 
-# Calculate net profit or loss for Whole Life Net Single Premium
+# Calculate gross profit or loss for Whole Life Net Single Premium
 #
 # @param in_age The input age for beginning the insurance policy
 # @param mat_age The age in which the policy matures
 # @param death_age The age in which the policy holder dies
-# @return A double representing the net profit or loss for a single policy holder
-WNS_net_profit <- function(in_age, mat_age, death_age){
+# @return A double representing the gross profit or loss for a single policy holder
+WNS_gross_profit <- function(in_age, mat_age, death_age){
   profit <- WNS_profit(in_age, mat_age)
   if (death_age < maturity_age){
     # cat(sprintf("input age: %s death age: %s Profit: %.2f\n", in_age, death_age, profit))
@@ -125,6 +125,13 @@ startTime <- Sys.time()
 profit <- 0
 profit_data <- vector(mode="double", length=iterations)
 iterations_data <- 1:iterations
+
+# ----- WIP Create data frame for start, mat, and death age
+
+ages <- data.frame(StartAge = integer(), MatAge = integer(), DeathAge = integer())
+
+
+# ----- End WIP -----
 for(i in 1:iterations) {
   # Generate random integer starting age
   if(input_age_start >= input_age_end) {
@@ -139,10 +146,28 @@ for(i in 1:iterations) {
     death_age = death_age + 1  
   }
 
-  # Calculate profit
-  profit <- profit + WNS_net_profit(input_age, maturity_age, death_age)
+  # Calculate gross profit
+  profit <- profit + WNS_gross_profit(input_age, maturity_age, death_age)
   profit_data[i] <- profit
+  
+  
+  # WIP Create policy starting age, maturity age, and death age
+  # ages$StartAge <- c(input_age)
+  # ages$MatAge <- c(maturity_age)
+  # ages$DeathAge <- c(death_age)
+  #(ages, StartAge = input_age, MatAge = maturity_age, DeathAge = death_age)
+  ages[nrow(ages)+1,] <- c(input_age, maturity_age, death_age)
 }
+
+# --------------- WIP: ROI calc ------------------ #
+# Creating a loop for creating an ROI adjusted profit table
+ROI_tracker <- data.frame(0,profit)
+names(ROI_tracker) <- c("Year", "ROI Adjusted Profit")
+
+
+
+# -------------- END WIP -------------------------#
+
 
 endTime <- Sys.time()
 elapsedTime = endTime - startTime
