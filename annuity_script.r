@@ -22,7 +22,6 @@ input_age_end = user_input[,2]
 maturity_age = user_input[,3]
 yearly_annuity = user_input[,4]
 interest_rate = user_input[,5]
-term_length = user_input[,6]
 iterations = user_input[,7]
 
 # Calculated initial variables
@@ -103,7 +102,7 @@ WNS_loss <- function(mat_age, death_age)
 # @return A double representing the gross profit or loss for a single policy holder
 WNS_gross_profit <- function(in_age, mat_age, death_age){
   profit <- WNS_profit(in_age, mat_age)
-  if (death_age < maturity_age){
+  if (death_age <= maturity_age){
     # cat(sprintf("input age: %s death age: %s Profit: %.2f\n", in_age, death_age, profit))
     return (profit)
   }
