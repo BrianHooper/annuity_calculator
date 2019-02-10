@@ -8,7 +8,7 @@
 #########################
 
 library(ggplot2)
-library(xlsx)
+#library(xlsx)
 
 # Read mortality data
 mortality_data <- read.csv(file="mortality.csv", header=TRUE, sep=",")
@@ -128,21 +128,15 @@ policy_table <- data.frame(StartAge = integer(),
                            GrossProfit = double())
 
 
-# Simulate a number of lifetimes (iterations)
+# Begin simulate a number of lifetimes (iterations)
 cat(sprintf("Beginning simulation of %s lifetimes...\n\n", iterations))
 startTime <- Sys.time()
 
-# TODO remove this code, I believe this is recorded and can be calculated form the generated policy_table
-# profit <- 0 # this will hold the accumulated gross profit over # (iterations) of individuals buying
-# profit_data <- vector(mode="double", length=iterations)
-# iterations_data <- 1:iterations
-
-
-write.xlsx (x = as.data.frame(policy_table), file = "foo.xlsx")
-
-xwrite.csv(summary(data_frame),"output.csv")
-
-policy_table <- read.csv()
+# Maybe we can use something like xtable to write tables? Also the policy table has nothing in it until after the loop.
+# xtable info: https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+# write.xlsx (x = as.data.frame(policy_table), file = "foo.xlsx")
+# xwrite.csv(summary(data_frame),"output.csv")
+# policy_table <- read.csv()
 
 for(i in 1:iterations) {
   # Generate random integer starting age
@@ -165,25 +159,20 @@ for(i in 1:iterations) {
                                            WNS_profit(input_age, maturity_age), 
                                            (death_age <= maturity_age), 
                                            WNS_gross_profit(input_age, maturity_age, death_age))
-  
-  # TODO remove this, can just use the policy table data frame if needed
-  # Calculate gross profit
-  # profit <- profit + WNS_gross_profit(input_age, maturity_age, death_age)
-  # profit_data[i] <- profit
-  
-}
+} # End simulate lifetimes
 
-# --------------- WIP: ROI calc ------------------ #
-# Creating a loop for creating an ROI adjusted profit table
-# This will predict company profits if # (iterations) WNS premium
-# policies were purchased in year 0, for x number of years
-company_years =50           # TODO make this a user input
-ROI_interest = 0.05         # TODO make this a user input
-investment_percent = 0.50   # TODO maybe make this user input
-policy_sales_goal = 100     # TODO make this uesr input? sales goal for number of policies sold per year
+endTime <- Sys.time()
+elapsedTime = endTime - startTime
+print(elapsedTime)
 
+# Read ROI input data to for projection of company yearly profits
+ROI_input <- read.csv(file="ROI_input.csv", header=TRUE, sep=",")
+company_years = ROI_input[,1]         
+ROI_interest = ROI_input[,2]         
+investment_percent = ROI_input[,3] 
+policy_sales_goal = ROI_input[,4]  # sales goal for number of policies sold per year
 
-# set initial policy sales
+# Set year 0 policy sales, draws random sample from the simulated lifetimes above
 policies <- policy_table[sample(nrow(policy_table),policy_sales_goal),]
 policies$policyAge <- c(0)
 
@@ -196,7 +185,10 @@ ROI <- c(0)
 sold_policies <- c(initial_profit)
 ROI_adjusted_profit <- c(initial_profit)
 
-# look to create a projection of company gross profits for x years
+# Begin loop for creating an ROI adjusted profit table
+cat(sprintf("Beginning projected profits for the next %s years...\n\n", company_years))
+startTime <- Sys.time()
+
 for (i in 2:company_years){
   # checking the current age of the policy holder (if mature, and the policy holder is not dead yet)
   one_year_loss = 0
@@ -205,7 +197,6 @@ for (i in 2:company_years){
       loss <- WNS_loss(policies$MatAge[j], policies$DeathAge[j])
       one_year_loss = one_year_loss + loss
     }
-    
   }
   # add new policies sold
   new_policies <- policy_table[sample(nrow(policy_table),policy_sales_goal),]
@@ -213,27 +204,21 @@ for (i in 2:company_years){
   policies <- rbind(policies,new_policies)
   policies$policyAge <- policies$policyAge + 1 # increment policy ages
   
+  # concatenate data from loop to ROI variables
   year <- c(year, i-1)
   total_loss <- c(total_loss, one_year_loss)
   sold_policies <- c(sold_policies, sum(new_policies$PolicyCost))
-  ROI <- c(ROI, invested[i-1] * ROI_interest + sold_policies[i] * investment_percent)
+  ROI <- c(ROI, invested[i-1] * ROI_interest + sold_policies[i] * investment_percent) # This reinvests the ROI for the year and the investment_percent value of the policies_sale_goal sold for the year 
   invested <- c(invested, ROI[i] + invested[i-1])
-  ROI_adjusted_profit <- c(ROI_adjusted_profit, (ROI_adjusted_profit[i-1] + invested[i] + sold_policies[i] - one_year_loss))
-  
-  
-}
-ROI_tracker <- data.frame(year, total_loss, ROI, invested, sold_policies, ROI_adjusted_profit)
-
-ROI_plot <- ggplot(ROI_tracker, aes(year, ROI_adjusted_profit)) + 
-  ggtitle("Projected ROI Adjusted Gross Income") + labs(x="Time (Years)", y = "Profit (Dollars)")+
-  geom_point(aes(year, ROI_adjusted_profit), colour="red", size=1) 
-print(ROI_plot)
-# -------------- END WIP -------------------------#
-
+  ROI_adjusted_profit <- c(ROI_adjusted_profit, (invested[i] + sold_policies[i] - one_year_loss))
+} # End yearly profit projections
 
 endTime <- Sys.time()
 elapsedTime = endTime - startTime
 print(elapsedTime)
+
+# Add ROI variables to data frame
+ROI_tracker <- data.frame(year, total_loss, ROI, invested, sold_policies, ROI_adjusted_profit)
 
 # TODO probably remove this. Probably not useful :)
 #cat(sprintf("Total profit over %s simulated lifetimes: $%.2f", iterations, profit))
@@ -243,24 +228,16 @@ print(elapsedTime)
 # Graphing age effect on mortality
 age_qx_plot <- ggplot(life_table, aes(age, qx)) + 
   ggtitle("Age Effect on Percent Mortality (qx)") +
-  labs(x = "Age", y = "Mortality (qx") +
-  geom_point(aes(age, qx), colour="#3366FF", size=1)
+  labs(x = "Age", y = "Mortality (qx)") +
+  geom_point(aes(age, qx), colour="blue", size=1)
 print(age_qx_plot) 
 
 # Graphing ax on age
 age_ax_plot <- ggplot(life_table, aes(age, ax)) + 
-  ggtitle("Age Effect on Annuity (ax)") + 
+  ggtitle("Age Effect on Annuity (ax) Expected Present Value") + 
   labs(x = "Age", y = "Annuity (ax)") +
-  geom_point(aes(age, ax), colour="#3366FF", size=1)
+  geom_point(aes(age, ax), colour="blue", size=1)
 print(age_ax_plot) 
-
-# TODO - I think we should probably remove this graph. It doesn't seem very useful.
-# Graphing WSN premium profit trends after each life that is complete
-# profit_plot <- ggplot(x = iterations_data, y = profit_data) + 
-#   ggtitle(paste("Profit over", iterations, "Lifetimes")) + 
-#   geom_point(aes(iterations_data, profit_data), colour="#3366FF", size=1) +
-#   xlab("Number of Lifetimes") + ylab("Profit")
-#   print(profit_plot) 
 
 # Graphing increasing age with the user-defined maturity age and yearly benefit of Net Single Premium Prices
 WNS_age_data <- age[1:maturity_age]
@@ -270,10 +247,11 @@ for (i in 1:length(WNS_age_data)){
 }
 age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data) + 
   ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"yearly benefit")) +
-  geom_point(aes(WNS_age_data, WNS_premium_data), colour="#3366FF", size=1) +
+  geom_point(aes(WNS_age_data, WNS_premium_data), colour="blue", size=1) +
   labs(x = "Age", y = "Whole Life Net Single Premium Price")
 print(age_premium_plot) 
 
+# Histogram of deaths in the simulated lifetimes
 hist.death <- ggplot(policy_table, aes(DeathAge)) + 
   theme(legend.position = "none") +
   ggtitle(paste("Age of Deaths over", iterations, " Lifetimes")) +
@@ -281,3 +259,8 @@ hist.death <- ggplot(policy_table, aes(DeathAge)) +
   stat_function(fun = dnorm, args = list(mean = mean(policy_table$DeathAge, na.rm = TRUE), sd = sd(policy_table$DeathAge, na.rm = TRUE)), colour = "black", size = 1)
 print(hist.death)
 
+# Yearly ROI adjusted profits
+ROI_plot <- ggplot(ROI_tracker, aes(year, ROI_adjusted_profit)) + 
+  ggtitle("Projected ROI Adjusted Gross Income") + labs(x="Time (Years)", y = "Yearly Profit (Dollars)")+
+  geom_point(aes(year, ROI_adjusted_profit), colour="blue", size=1) 
+print(ROI_plot)
