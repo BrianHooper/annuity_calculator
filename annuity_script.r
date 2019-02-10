@@ -8,7 +8,7 @@
 #########################
 
 library(ggplot2)
-#library(xlsx)
+library(xlsx)
 
 # Read mortality data
 mortality_data <- read.csv(file="mortality.csv", header=TRUE, sep=",")
@@ -137,11 +137,12 @@ startTime <- Sys.time()
 # profit_data <- vector(mode="double", length=iterations)
 # iterations_data <- 1:iterations
 
-#write.xlsx (x = as.data.frame(policy_table), file = "foo.xlsx")
 
-#xwrite.csv(summary(data_frame),"output.csv")
+write.xlsx (x = as.data.frame(policy_table), file = "foo.xlsx")
 
-#policy_table <- read.csv()
+xwrite.csv(summary(data_frame),"output.csv")
+
+policy_table <- read.csv()
 
 for(i in 1:iterations) {
   # Generate random integer starting age
