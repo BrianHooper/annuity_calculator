@@ -93,7 +93,7 @@ WNS_profit <- function(in_age, mat_age){
 # @param death_age The age in which the policy holder dies
 # @return A double representing the total paid out to the client for the policy
 WNS_loss <- function(mat_age, death_age)
-  return ((death_age - mat_age) * yearly_annuity *12 )
+  return ((death_age - mat_age) * yearly_annuity * 12)
 
 # Calculate gross profit or loss for Whole Life Net Single Premium
 #
@@ -129,7 +129,7 @@ policy_table <- data.frame(StartAge = integer(),
 
 
 # Begin simulate a number of lifetimes (iterations)
-cat(sprintf("Beginning simulation of %s lifetimes...\n\n", iterations))
+cat(sprintf("Beginning simulation of %s lifetimes...\n", iterations))
 startTime <- Sys.time()
 
 # Maybe we can use something like xtable to write tables? Also the policy table has nothing in it until after the loop.
@@ -186,7 +186,7 @@ sold_policies <- c(initial_profit)
 ROI_adjusted_profit <- c(initial_profit)
 
 # Begin loop for creating an ROI adjusted profit table
-cat(sprintf("Beginning projected profits for the next %s years...\n\n", company_years))
+cat(sprintf("Beginning projected profits for the next %s years...\n", company_years))
 startTime <- Sys.time()
 
 for (i in 2:company_years){
@@ -246,7 +246,7 @@ for (i in 1:length(WNS_age_data)){
   WNS_premium_data[i] <- WNS_profit(i, maturity_age)
 }
 age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data) + 
-  ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"yearly benefit")) +
+  ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"monthly benefit")) +
   geom_point(aes(WNS_age_data, WNS_premium_data), colour="blue", size=1) +
   labs(x = "Age", y = "Whole Life Net Single Premium Price")
 print(age_premium_plot) 
