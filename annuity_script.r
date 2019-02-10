@@ -43,7 +43,7 @@ life_table$dx[1] <- life_table$lx[1] * life_table$qx[1]
 for (i in 2:length(life_table$qx)) {
   life_table$lx[i] <- life_table$lx[i-1] - life_table$dx[i-1]
   life_table$dx[i] <- life_table$lx[i] * life_table$qx[i]
-
+  
 }
 
 # Add Px
@@ -143,13 +143,13 @@ for(i in 1:iterations) {
   } else {
     input_age = sample(input_age_start:input_age_end, 1)
   }
-
+  
   # Pick a random death date based on mortality table
   death_age = input_age
   while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
     death_age = death_age + 1  
   }
-
+  
   # Add the simulated lifetime to policy table
   policy_table[nrow(policy_table)+1,] <- c(input_age, 
                                            maturity_age, 
@@ -211,15 +211,15 @@ for (i in 2:company_years){
   ROI <- c(ROI, invested[i-1] * ROI_interest + sold_policies[i] * investment_percent)
   invested <- c(invested, ROI[i] + invested[i-1])
   ROI_adjusted_profit <- c(ROI_adjusted_profit, (ROI_adjusted_profit[i-1] + invested[i] + sold_policies[i] - one_year_loss))
-
-
+  
+  
 }
 ROI_tracker <- data.frame(year, total_loss, ROI, invested, sold_policies, ROI_adjusted_profit)
-               
+
 ROI_plot <- ggplot(ROI_tracker, aes(year, ROI_adjusted_profit)) + 
   ggtitle("Projected ROI Adjusted Gross Income") + labs(x="Time (Years)", y = "Profit (Dollars)")+
   geom_point(aes(year, ROI_adjusted_profit), colour="red", size=1) 
-  print(ROI_plot)
+print(ROI_plot)
 # -------------- END WIP -------------------------#
 
 
@@ -237,14 +237,14 @@ age_qx_plot <- ggplot(life_table, aes(age, qx)) +
   ggtitle("Age Effect on Percent Mortality (qx)") +
   labs(x = "Age", y = "Mortality (qx") +
   geom_point(aes(age, qx), colour="#3366FF", size=1)
-  print(age_qx_plot) 
+print(age_qx_plot) 
 
 # Graphing ax on age
 age_ax_plot <- ggplot(life_table, aes(age, ax)) + 
   ggtitle("Age Effect on Annuity (ax)") + 
   labs(x = "Age", y = "Annuity (ax)") +
   geom_point(aes(age, ax), colour="#3366FF", size=1)
-  print(age_ax_plot) 
+print(age_ax_plot) 
 
 # TODO - I think we should probably remove this graph. It doesn't seem very useful.
 # Graphing WSN premium profit trends after each life that is complete
@@ -258,17 +258,17 @@ age_ax_plot <- ggplot(life_table, aes(age, ax)) +
 WNS_age_data <- age[1:maturity_age]
 WNS_premium_data <- vector(mode="double", length=length(WNS_age_data))
 for (i in 1:length(WNS_age_data)){
-   WNS_premium_data[i] <- WNS_profit(i, maturity_age)
+  WNS_premium_data[i] <- WNS_profit(i, maturity_age)
 }
 age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data) + 
   ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"yearly benefit")) +
   geom_point(aes(WNS_age_data, WNS_premium_data), colour="#3366FF", size=1) +
   labs(x = "Age", y = "Whole Life Net Single Premium Price")
-  print(age_premium_plot) 
-  
+print(age_premium_plot) 
+
 hist.death <- ggplot(policy_table, aes(DeathAge)) + 
   theme(legend.position = "none") +
-  ggtitle("Age of Deaths")
-  geom_histogram(binwidth = 1, colour = "black", fill = "blue") + labs(x = "Age", y = "Count") + 
+  ggtitle(paste("Age of Deaths over", iterations, " Lifetimes")) +
+  geom_histogram(binwidth = 1, aes(y = ..density..), colour = "black", fill = "blue") + labs(x = "Age", y = "Density") + 
   stat_function(fun = dnorm, args = list(mean = mean(policy_table$DeathAge, na.rm = TRUE), sd = sd(policy_table$DeathAge, na.rm = TRUE)), colour = "black", size = 1)
-  print(hist.death)
+print(hist.death)
