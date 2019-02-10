@@ -197,6 +197,7 @@ for (i in 2:company_years){
       one_year_loss = one_year_loss + loss
     }
   }
+  
   # add new policies sold
   new_policies <- policy_table[sample(nrow(policy_table),policy_sales_goal),]
   new_policies$policyAge <- c(0)
@@ -207,8 +208,8 @@ for (i in 2:company_years){
   year <- c(year, i-1)
   total_loss <- c(total_loss, one_year_loss)
   sold_policies <- c(sold_policies, sum(new_policies$PolicyCost))
-  ROI <- c(ROI, invested[i-1] * ROI_interest + sold_policies[i] * investment_percent) # This reinvests the ROI for the year and the investment_percent value of the policies_sale_goal sold for the year 
-  invested <- c(invested, ROI[i] + invested[i-1])
+  ROI <- c(ROI, invested[i-1] * ROI_interest) 
+  invested <- c(invested, ROI[i] + invested[i-1] + sold_policies[i] * investment_percent) # This reinvests the ROI for the year and the investment_percent value of the policies_sale_goal sold for the year 
   ROI_adjusted_profit <- c(ROI_adjusted_profit, (invested[i] + sold_policies[i] - one_year_loss))
 } # End yearly profit projections
 
