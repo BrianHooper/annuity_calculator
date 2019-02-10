@@ -3,12 +3,12 @@
 #                       #
 # Brian Hooper          #
 # Heather McKinnon      #
-# Divya Kalla Chandrika #
+# Divya Chandrika Kalla #
 # CS567 - 1-29-2019     #
 #########################
 
 library(ggplot2)
-
+library(xlsx)
 # Read mortality data
 mortality_data <- read.csv(file="mortality.csv", header=TRUE, sep=",")
 age = mortality_data[,1]
@@ -125,7 +125,11 @@ policy_table <- data.frame(StartAge = integer(),
                            PolicyCost = double(),
                            isEarlyDeath = logical(),
                            GrossProfit = double())
+write.xlsx (x = as.data.frame(policy_table), file = "foo.xlsx")
 
+xwrite.csv(summary(data_frame),"output.csv")
+
+<<<<<<< HEAD
 # Simulate a number of lifetimes (iterations)
 cat(sprintf("Beginning simulation of %s lifetimes...\n\n", iterations))
 startTime <- Sys.time()
@@ -136,6 +140,9 @@ startTime <- Sys.time()
 # iterations_data <- 1:iterations
 
 
+=======
+policy_table <- read.csv()
+>>>>>>> fe817689524b7a0055ceb0d67d73bdbbd0f27324
 for(i in 1:iterations) {
   # Generate random integer starting age
   if(input_age_start >= input_age_end) {
@@ -263,6 +270,7 @@ for (i in 1:length(WNS_age_data)){
 age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data) + 
   ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"yearly benefit")) +
   geom_point(aes(WNS_age_data, WNS_premium_data), colour="#3366FF", size=1) +
+<<<<<<< HEAD
   labs(x = "Age", y = "Whole Life Net Single Premium Price")
 print(age_premium_plot) 
 
@@ -272,3 +280,12 @@ hist.death <- ggplot(policy_table, aes(DeathAge)) +
   geom_histogram(binwidth = 1, aes(y = ..density..), colour = "black", fill = "blue") + labs(x = "Age", y = "Density") + 
   stat_function(fun = dnorm, args = list(mean = mean(policy_table$DeathAge, na.rm = TRUE), sd = sd(policy_table$DeathAge, na.rm = TRUE)), colour = "black", size = 1)
 print(hist.death)
+=======
+  xlab("Age") + ylab("Whole Life Net Single Premium Price"))
+#-------------histogram----------------
+
+hist.death <- ggplot(policy_table, aes(DeathAge)) + theme(legend.position = "none") + geom_histogram(aes(y = ..density..), colour = "black", fill = "blue") + labs(x = "profit", y = "age") + stat_function(fun = dnorm, args = list(mean = mean(policy_table$DeathAge, na.rm = TRUE),
+ sd = sd(policy_table$DeathAge, na.rm = TRUE)), colour = "black", size = 1) 
+hist.death
+
+>>>>>>> fe817689524b7a0055ceb0d67d73bdbbd0f27324
