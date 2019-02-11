@@ -12,6 +12,7 @@ library(ggplot2)
 
 # Read mortality data
 mortality_data <- read.csv(file="mortality.csv", header=TRUE, sep=",")
+colnames(mortality_data) <- c("age", "mortality")
 age = mortality_data[,1]
 qx = mortality_data[,2]
 
