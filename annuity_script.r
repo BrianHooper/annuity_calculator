@@ -176,12 +176,6 @@ for (input_index in 1:length(user_input$input_age_start)) {
   cat(sprintf("Beginning simulation of %s lifetimes...\n", iterations))
   startTime <- Sys.time()
   
-  # Maybe we can use something like xtable to write tables? Also the policy table has nothing in it until after the loop.
-  # xtable info: https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
-  # write.xlsx (x = as.data.frame(policy_table), file = "foo.xlsx")
-  # xwrite.csv(summary(data_frame),"output.csv")
-  # policy_table <- read.csv()
-  
   for(i in 1:iterations) {
     # Generate random integer starting age
     if(input_age_start >= input_age_end) {
@@ -259,10 +253,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
   # Add ROI variables to data frame
   ROI_tracker <- data.frame(year, total_loss, ROI, invested, sold_policies, ROI_adjusted_profit)
   
-  # TODO probably remove this. Probably not useful :)
-  #cat(sprintf("Total profit over %s simulated lifetimes: $%.2f", iterations, profit))
-  
-  
+
   #------------------------- Graphing -------------------------------
   # Graphing age effect on mortality
   age_qx_plot <- ggplot(life_table, aes(age, qx)) + 
@@ -315,4 +306,5 @@ for (input_index in 1:length(user_input$input_age_start)) {
   dev.off()
   
   write.csv(policy_table, paste(path_name, "policies.csv", sep=""))
+  write.csv(ROI_tracker, paste(path_name, "profit_projections.csv", sep=""))
 }
