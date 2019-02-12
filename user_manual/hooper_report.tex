@@ -28,7 +28,7 @@
 	This document describes the use and function of the \textit{Annuity calculator} written in R. The program is intended to simulate 10,000 independent customers purchasing an annuities using a mortality table. An input file provided to the program will give a initial age range that will be used to randomly select a starting age, or the age that the person will purchase an annuity product. Then, the mortality table will be used to randomly select a death age based on the distribution provided by the mortality table. This can be used to calculate the amount of profit or loss for the insurance company for an individual annuity product.
 	
 	\section{Input}
-	Two auxiliary comma-separated files are required to use the script: \textit{input.csv} and \textit{mortality.csv}. The \textit{input.csv} contains the following input parameters that should be provided to the script, shown in table \ref{description}: 
+	Three auxiliary comma-separated files are required to use the script: \textit{input.csv}, \textit{ROI\_input.csv}, and \textit{mortality.csv}. The \textit{input.csv} contains the following input parameters that should be provided to the script, shown in table \ref{description}: 
 \begin{table}[H]
 	\centering
 	\begin{tabular}{|l|l|}
@@ -45,18 +45,21 @@
 	\caption{Input parameter descriptions}
 \end{table}
 
-An example \textit{input.csv} file is shown in table \ref{example}. In this case, the program will simulate a group of 100 individuals, aged 25 to 40, purchasing a \$1000 annuity benefit that matures at age 60. 
+Note that column headers input\_start\_age, input\_age\_end, etc are required for the script to function correctly. Each row of the input column will represent a single simulation. An example \textit{input.csv} file is shown in table \ref{example}. In this case, the program will simulate a group of 100 individuals, aged 25 to 40, purchasing a \$1000 annuity benefit that matures at age 60. 
+
 
 
 \begin{table}[H]
 	\begin{adjustwidth}{-.5in}{-.5in}  
+		\footnotesize{
 		\begin{tabular}{|l|l|l|l|l|l|l|}
 			\hline
-			input\_age\_start & input\_age\_end & maturity\_age & monthly\_annuity & interest\_rate & term\_length & iterations \\ \hline
+			\textbf{input\_age\_start} & \textbf{input\_age\_end} & \textbf{maturity\_age} & \textbf{monthly\_annuity} & \textbf{interest\_rate} & \textbf{term\_length} & \textbf{iterations} \\ \hline
 			25 & 40 & 60 & 1000 & 0.05 & 20 & 100 \\ \hline
 		\end{tabular}
 		\label{example}
 		\caption{Example \textit{input.csv} file}
+	}
 	\end{adjustwidth}
 \end{table}
 
@@ -77,8 +80,21 @@ The \textit{mortality.csv} file should contain two columns: an \textit{age} colu
 	\label{mortality}
 \end{table}
 
+Finally, table \ref{roi} shows an example \textit{ROI\_input.csv} file. The number of rows in this file should not exceed the number of rows in the  \textit{input.csv} file. However, if the number of rows is less than the  \textit{input.csv} file, the last row of the ROI file will be used for all subsequent simulations. 
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|l|l|l|}
+		\hline
+		\textbf{company\_years} & \textbf{ROI\_interest} & \textbf{investment\_percent} & \textbf{policy\_sales\_goal} \\ \hline
+		75 & 0.05 & 0.25 & 100 \\ \hline
+	\end{tabular}
+	\caption{Example \textit{ROI\_input.csv} file}
+	\label{roi}
+\end{table}
+
 \section{Use}
 
-To invoke the program, simply use the Rscript command from the directory containing the \textit{input.csv} and \textit{mortality.csv} files. The program will output a report and a set of tables containing the expected profit or loss to the company based on the simulated business block. 
+To invoke the program, simply use the Rscript command from the directory containing the \textit{input.csv} and \textit{mortality.csv} files. The program will output a report and a set of tables containing the expected profit or loss to the company based on the simulated business block. Plots and output will be placed in the \textit{output} folder, with a single subfolder for each row in the input file. 
 
 \end{document}
