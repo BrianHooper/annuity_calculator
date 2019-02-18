@@ -159,7 +159,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
   }
   
   # Display a single net premium price for user defined start and maturity age
-  cat(sprintf("A sample whole life single net premium price for input age %s with maturity age %s and $ %.2f yearly benefit: $%.2f\n\n",
+  cat(sprintf("A sample whole life single net premium price for input age %s with maturity age %s and $%.2f yearly benefit: $%.2f\n\n",
               input_age_start, maturity_age, yearly_annuity,WNS_profit(input_age_start,maturity_age)))
   
   
@@ -201,7 +201,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
   
   endTime <- Sys.time()
   elapsedTime = endTime - startTime
-  print(elapsedTime)
+  cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
   
   # Set year 0 policy sales, draws random sample from the simulated lifetimes above
   policies <- policy_table[sample(nrow(policy_table),policy_sales_goal),]
@@ -248,7 +248,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
   
   endTime <- Sys.time()
   elapsedTime = endTime - startTime
-  print(elapsedTime)
+  cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
   
   # Add ROI variables to data frame
   ROI_tracker <- data.frame(year, total_loss, ROI, invested, sold_policies, ROI_adjusted_profit)
@@ -259,16 +259,18 @@ for (input_index in 1:length(user_input$input_age_start)) {
   age_qx_plot <- ggplot(life_table, aes(age, qx)) + 
     ggtitle("Age Effect on Percent Mortality (qx)") +
     labs(x = "Age", y = "Mortality (qx)") +
-    geom_point(aes(age, qx), colour="blue", size=1)
+    theme(plot.title = element_text(hjust = 0.5, size=16, face="bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+    geom_point(aes(age, qx), colour="deepskyblue1", size=1)
   print(age_qx_plot) 
   dev.copy(png,filename=paste(path_name, "age_mortality.png", sep=""))
   dev.off()
   
   # Graphing ax on age
   age_ax_plot <- ggplot(life_table, aes(age, ax)) + 
-    ggtitle("Age Effect on Annuity (ax) Expected Present Value") + 
+    ggtitle("Age Effect on Annuity (ax) Expected Present Value") +
     labs(x = "Age", y = "Annuity (ax)") +
-    geom_point(aes(age, ax), colour="blue", size=1)
+    theme(plot.title = element_text(hjust = 0.5, size=16, face="bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+    geom_point(aes(age, ax), colour="deepskyblue1", size=1)
   print(age_ax_plot) 
   dev.copy(png,filename=paste(path_name, "age_annuity.png", sep=""))
   dev.off()
@@ -281,26 +283,29 @@ for (input_index in 1:length(user_input$input_age_start)) {
   }
   age_premium_plot <- ggplot(x = WNS_age_data, y = WNS_premium_data) + 
     ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", yearly_annuity,"monthly benefit")) +
-    geom_point(aes(WNS_age_data, WNS_premium_data), colour="blue", size=1) +
-    labs(x = "Age", y = "Whole Life Net Single Premium Price")
+    labs(x = "Age", y = "Whole Life Net Single Premium Price") +
+    theme(plot.title = element_text(hjust = 0.5, size=16, face="bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+    geom_point(aes(WNS_age_data, WNS_premium_data), colour="deepskyblue1", size=1) 
   print(age_premium_plot) 
   dev.copy(png,filename=paste(path_name, "age_premium.png", sep=""))
   dev.off()
   
   # Histogram of deaths in the simulated lifetimes
   hist.death <- ggplot(policy_table, aes(DeathAge)) + 
-    theme(legend.position = "none") +
-    ggtitle(paste("Age of Deaths over", iterations, " Lifetimes")) +
-    geom_histogram(binwidth = 1, aes(y = ..density..), colour = "black", fill = "blue") + labs(x = "Age", y = "Density") + 
-    stat_function(fun = dnorm, args = list(mean = mean(policy_table$DeathAge, na.rm = TRUE), sd = sd(policy_table$DeathAge, na.rm = TRUE)), colour = "black", size = 1)
+    ggtitle(paste("Age of Deaths over", iterations, "Lifetimes")) +
+    labs(x = "Age of Death", y = "Frequency") +
+    theme(plot.title = element_text(hjust = 0.5, size=16, face="bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+    geom_histogram(binwidth = 1, aes(y = ..count..), colour = "black", fill = "deepskyblue1")
   print(hist.death)
   dev.copy(png,filename=paste(path_name, "hist_death.png", sep=""))
   dev.off()
   
   # Yearly ROI adjusted profits
   ROI_plot <- ggplot(ROI_tracker, aes(year, ROI_adjusted_profit)) + 
-    ggtitle("Projected ROI Adjusted Gross Income") + labs(x="Time (Years)", y = "Yearly Profit (Dollars)")+
-    geom_point(aes(year, ROI_adjusted_profit), colour="blue", size=1) 
+    ggtitle("Projected ROI Adjusted Gross Income") +
+    labs(x="Time (Years)", y = "Yearly Profit (Dollars)") +
+    theme(plot.title = element_text(hjust = 0.5, size=16, face="bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+    geom_point(aes(year, ROI_adjusted_profit), colour="deepskyblue1", size=1)
   print(ROI_plot)
   dev.copy(png,filename=paste(path_name, "roi_.png", sep=""))
   dev.off()
