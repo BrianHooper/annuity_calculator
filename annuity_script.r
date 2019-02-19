@@ -8,7 +8,6 @@
 #########################
 
 library(ggplot2)
-#library(xlsx)
 
 if(!file.exists("mortality.csv")) {
   stop("missing mortality table in file \"mortality.csv\"\n")
@@ -32,8 +31,6 @@ qx = mortality_data[,2]
 # Read and assign input parameters
 user_input <- read.csv(file="input.csv", header = TRUE, sep = ",")
 ROI_input <- read.csv(file="ROI_input.csv", header = TRUE, sep = ",")
-# colnames(user_input, c("input_age_start", "input_age_end", "maturity_age", "monthly_annuity", "interest_rate", "term_length", "iterations"))
-# colnames(ROI_input, c("company_years", "ROI_interest", "investment_percent", "policy_sales_goal"))
 
 if(length(user_input) < 1) {
   stop("user input file is empty\n")
@@ -260,7 +257,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
     ggtitle("Age Effect on Percent Mortality (qx)") +
     labs(x = "Age", y = "Mortality (qx)") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(age, qx), colour = "deepskyblue1", size = 1)
+    geom_point(aes(age, qx), colour = "deepskyblue3", size = 1)
   print(age_qx_plot) 
   dev.copy(png,filename = paste(path_name, "age_mortality.png", sep = ""))
   dev.off()
@@ -270,7 +267,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
     ggtitle("Age Effect on Annuity (ax) Expected Present Value") +
     labs(x = "Age", y = "Annuity (ax)") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(age, ax), colour = "deepskyblue1", size = 1)
+    geom_point(aes(age, ax), colour = "deepskyblue3", size = 1)
   print(age_ax_plot) 
   dev.copy(png,filename = paste(path_name, "age_annuity.png", sep = ""))
   dev.off()
@@ -285,7 +282,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
     ggtitle(paste("Premium prices from age 1 through", length(WNS_age_data),"with\nmaturity age", maturity_age,"and $", monthly_annuity,"monthly benefit")) +
     labs(x = "Age", y = "Whole Life Net Single Premium Price") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(WNS_age_data, WNS_premium_data), colour = "deepskyblue1", size = 1) 
+    geom_point(aes(WNS_age_data, WNS_premium_data), colour = "deepskyblue3", size = 1) 
   print(age_premium_plot) 
   dev.copy(png,filename = paste(path_name, "age_premium.png", sep = ""))
   dev.off()
@@ -295,7 +292,7 @@ for (input_index in 1:length(user_input$input_age_start)) {
     ggtitle(paste("Age of Deaths over", iterations, "Lifetimes")) +
     labs(x = "Age of Death", y = "Frequency") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_histogram(binwidth = 1, aes(y = ..count..), colour = "black", fill = "deepskyblue1")
+    geom_histogram(binwidth = 1, aes(y = ..count..), colour = "black", fill = "deepskyblue2")
   print(hist.death)
   dev.copy(png,filename = paste(path_name, "hist_death.png", sep = ""))
   dev.off()
@@ -305,14 +302,15 @@ for (input_index in 1:length(user_input$input_age_start)) {
     ggtitle("Projected ROI Adjusted Gross Income") +
     labs(x = "Time (Years)", y = "Yearly Profit (Dollars)") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(year, ROI_adjusted_profit), colour = "deepskyblue1", size = 1)
+    geom_point(aes(year, ROI_adjusted_profit), colour = "deepskyblue3", size = 1)
   print(ROI_plot)
-  dev.copy(png,filename = paste(path_name, "roi_.png", sep = ""))
+  dev.copy(png,filename = paste(path_name, "roi_income.png", sep = ""))
   dev.off()
   
+  # Adjusting table data to show 2 decimal precision for monetary values
   policy_table$PolicyCost <- format(round(policy_table$PolicyCost, digits = 2), nsmall = 2)
   policy_table$GrossProfit <- format(round(policy_table$GrossProfit, digits = 2), nsmall = 2)
-  ROI_tracker[,4:6] <- format(round(ROI_tracker[,3:6], digits = 2), nsmall = 2)
+  ROI_tracker[,2:6] <- format(round(ROI_tracker[,2:6], digits = 2), nsmall = 2)
   
   write.csv(policy_table, paste(path_name, "policies.csv", sep = ""), row.names = FALSE)
   write.csv(ROI_tracker, paste(path_name, "profit_projections.csv", sep = ""), row.names = FALSE)
