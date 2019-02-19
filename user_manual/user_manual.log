@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6800 64-bit) (preloaded format=pdflatex 2018.10.4)  12 FEB 2019 09:29
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6800 64-bit) (preloaded format=pdflatex 2018.10.4)  19 FEB 2019 10:10
 entering extended mode
 **./user_manual.tex
 (user_manual.tex
@@ -263,28 +263,28 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 25.
 "
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-Overfull \hbox (2.19997pt too wide) in paragraph at lines 31--46
-\OT1/cmr/m/n/12 Three aux-il-iary comma-separated files are re-quired to use th
-e script: \OT1/cmr/m/it/12 in-put.csv\OT1/cmr/m/n/12 , \OT1/cmr/m/it/12 ROI[]in
-put.csv\OT1/cmr/m/n/12 ,
+Overfull \hbox (32.55382pt too wide) in paragraph at lines 31--46
+\OT1/cmr/m/n/12 Three aux-il-iary comma-separated-value files are re-quired to 
+use the script: \OT1/cmr/m/it/12 in-put.csv\OT1/cmr/m/n/12 , \OT1/cmr/m/it/12 R
+OI[]input.csv\OT1/cmr/m/n/12 ,
  []
 
 [1
 
 {C:/Users/hooperb/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-Overfull \hbox (5.40222pt too wide) in paragraph at lines 55--61
+Overfull \hbox (5.40211pt too wide) in paragraph at lines 55--61
 [][]
  []
 
 [2] (user_manual.aux) ) 
 Here is how much of TeX's memory you used:
  2305 strings out of 492973
- 35031 string characters out of 3125806
+ 35035 string characters out of 3125806
  105501 words of memory out of 3000000
  6131 multiletter control sequences out of 15000+200000
  13703 words of font info for 53 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,10n,32p,675b,324s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 41i,10n,32p,694b,322s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Users/hooperb/AppData/Local/Programs/MiKTeX 2.9/font
 s/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/hooperb/AppData/Local/Programs/
 MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Users/hooperb/AppData/
@@ -294,7 +294,7 @@ b><C:/Users/hooperb/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfon
 ts/cm/cmr17.pfb><C:/Users/hooperb/AppData/Local/Programs/MiKTeX 2.9/fonts/type1
 /public/amsfonts/cm/cmsy10.pfb><C:/Users/hooperb/AppData/Local/Programs/MiKTeX 
 2.9/fonts/type1/public/amsfonts/cm/cmti12.pfb>
-Output written on user_manual.pdf (2 pages, 90523 bytes).
+Output written on user_manual.pdf (2 pages, 91142 bytes).
 PDF statistics:
  37 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
