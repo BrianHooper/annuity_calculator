@@ -36,7 +36,6 @@ if(length(user_input) < 1) {
   stop("user input file is empty\n")
 } else if(length(user_input) < length(ROI_input)) {
   stop("ROI input file has too many rows\n")
-} else if(ncol(user_input) != 7) {
   stop("user_input file is incorrectly formatted\n")
 } else if(ncol(ROI_input) != 4) {
   stop("user_input file is incorrectly formatted\n")
