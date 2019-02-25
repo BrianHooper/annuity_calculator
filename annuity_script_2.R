@@ -364,6 +364,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
   
   # Graphing fund value over time
+  # NOTE: to add multiple lines, convert from wide to long data (use melt())
   fund_plot <- ggplot(fund_value_table, aes(month_total, fund_value)) + 
     ggtitle("Monthly Fund Value") +
     labs(x = "Time (Months)", y = "Fund Value (Dollars)") +
@@ -371,11 +372,29 @@ for (input_index in 1:length(user_input$age_range_start)) {
     geom_point(aes(month_total, fund_value), colour = "deepskyblue3", size = 1)
   print(fund_plot)
   
-  # 3D graphing
-  
-  #fund3D <- with(MASS::geyser, MASS::kde2d(duration, waiting, n = 50))
-  p <- plotly::add_surface(plot_ly(x = fund_value_table$month_total, y = fund_value_table$fund_value, z = fund_value_table$monthly_payout))
+  # 3D Surface
+  p <- add_surface(plot_ly(x = fund_value_table$monthly_ATP, y = fund_value_table$premium_sold_value, z = cbind(fund_value_table$fund_value, fund_value_table$fund_value))) %>%
+  layout(scene = list(xaxis = list(title = 'Accumulated Total Premium'),
+                      yaxis = list(title = 'Premiums Sold Value'),
+                      zaxis = list(title = 'Fund Value')))
   print(p)
+  
+  # 3D Scatter
+  fund3D<-data.frame(ATP = as.factor(fund_value_table$monthly_ATP),
+                     premiums = as.factor(fund_value_table$premium_sold_value),
+                     fundValue = as.factor(fund_value_table$fund_value))
+  r <- plot_ly(fund3D, x = fund3D$ATP, y = fund3D$premiums, z = fund3D$fundValue) %>%
+    add_markers() %>%
+    layout(scene = list(xaxis = list(title = 'Accumulated Total Premium'),
+                        yaxis = list(title = 'Premiums Sold Value'),
+                        zaxis = list(title = 'Fund Value')))
+  print(r)
+  
+  #htmlwidgets::saveWidget(as_widget(p), "Scattered3DFundValues.html")
+  
+  # 3D with plot3D
+  library(plot3D)
+  
   
   # -------------------- END WIP ------------------------------------- #
   
