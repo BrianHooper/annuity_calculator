@@ -8,6 +8,7 @@
 #########################
 
 library(ggplot2)
+library(plotly)
 
 if(!file.exists("USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv")) {
   stop("missing mortality table in file \"USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv\"\n")
@@ -369,6 +370,12 @@ for (input_index in 1:length(user_input$age_range_start)) {
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
     geom_point(aes(month_total, fund_value), colour = "deepskyblue3", size = 1)
   print(fund_plot)
+  
+  # 3D graphing
+  
+  #fund3D <- with(MASS::geyser, MASS::kde2d(duration, waiting, n = 50))
+  p <- plotly::add_surface(plot_ly(x = fund_value_table$month_total, y = fund_value_table$fund_value, z = fund_value_table$monthly_payout))
+  print(p)
   
   # -------------------- END WIP ------------------------------------- #
   
