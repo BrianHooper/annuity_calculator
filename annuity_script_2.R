@@ -270,20 +270,19 @@ for (input_index in 1:length(user_input$age_range_start)) {
   fund_policies <- policies[sample(nrow(policies), 1000),]
   
   # Create fund value table variables at year zero
+  total_reserve <- c(0)
   year_num <- c(0)
-  month_of_year <- c(0)
-  month_total <- c(0)
-  monthly_payout <- c(0)
+  total_benefit_payout <- c(0)
   num_premiums_sold <- c(0)
   premium_sold_value <- c(0)
-  monthly_ROI <- c(0)
-  monthly_ATP <- c(0) # ATP is Accumulated Total Premium 
+  yearly_ROI <- c(0)
+  yearly_ATP <- c(0) # ATP is Accumulated Total Premium 
   ATP_plus_ROI <- c(0)
   fund_value <- c(1000000) # TODO, what should the starting funds be?
   num_payouts <- c(0)
   accumulated_deaths <- c(0)
   unmatured_policies <- c(0)
-
+  profit <- c(0)
   # TODO, have user input for number of years?
   years = 5 
   month_num = 1 # counter for month number
@@ -323,22 +322,21 @@ for (input_index in 1:length(user_input$age_range_start)) {
       fund_policies <- rbind(fund_policies, new_policies)
       
       # Assign values to monthly variables
+      total_reserve       <- c(sum(fund_policies$reserve))
       year_num            <- c(year_num, year)
-      month_of_year       <- c(month_of_year, month - 1)
-      month_total         <- c(month_total, month_num - 1)
-      monthly_payout      <- c(monthly_payout, one_month_payout)
+      total_benefit_payout<- c(sum(fund_policies$benefit_payout))
       num_premiums_sold   <- c(num_premiums_sold, sales_goal)
       premium_sold_value  <- c(premium_sold_value, sum(new_policies$PolicyCost))
-      monthly_ROI         <- c(monthly_ROI, 1 + (ROI_interest / 12))
-      monthly_ATP         <- c(monthly_ATP, (fund_value[month_num - 1] + premium_sold_value[month_num])) # ATP is Accumulated Total Premium 
+      yearly_ROI         <- c(yearly_ROI, 1 + ROI_interest)
+      yearly_ATP         <- c(yearly_ATP, (fund_value[year - 1] + premium_sold_value[year])) # ATP is Accumulated Total Premium 
       ATP_plus_ROI        <- c(ATP_plus_ROI, (monthly_ATP[month_num] * monthly_ROI[month_num]))
-      fund_value          <- c(fund_value, (ATP_plus_ROI[month_num] - monthly_payout[month_num]))
+      fund_value          <- c(fund_value, (ATP_plus_ROI[year] - total_benefit_payout[year]))
       num_payouts         <- c(num_payouts, payouts)
       accumulated_deaths  <- c(accumulated_deaths, deaths)
       unmatured_policies  <- c(unmatured_policies, unmatured)
+      profit              <- c(profit, (fund_value[year] - total_reserve[year]))
       
     } # End 1 year (12 months)
-    
     # Increment policy ages after 1 year
     fund_policies$policyAge <- fund_policies$policyAge + 1 # increment policy ages  
     
