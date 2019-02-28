@@ -341,19 +341,19 @@ for (input_index in 1:length(user_input$age_range_start)) {
     fund_policies$policyAge <- fund_policies$policyAge + 1 # increment policy ages  
     
     # Add monthly values to fund_values table
-    fund_value_table <- data.frame(year_num,
-                                   month_of_year,
-                                   month_total,
-                                   monthly_payout,
+    fund_value_table <- data.frame(total_reserve,
+                                   year_num,
+                                   total_benefit_payout,
                                    num_premiums_sold,
                                    premium_sold_value,
-                                   monthly_ROI,
-                                   monthly_ATP,
+                                   yearly_ROI,
+                                   yearly_ATP,
                                    ATP_plus_ROI,
                                    fund_value,
                                    num_payouts,
                                    accumulated_deaths,
-                                   unmatured_policies)
+                                   unmatured_policies,
+                                   profit)
     
   } # End num years
   
