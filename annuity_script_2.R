@@ -216,24 +216,11 @@ for (input_index in 1:length(user_input$age_range_start)) {
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
   
   
-  
   # Draws random sample from the simulated lifetimes above
   policies <- lifetimes[sample(nrow(lifetimes), policy_sales_goal),]
   
-
-  # # Set variables for ROI simulation
-  # initial_profit <- sum(policies$PolicyCost) # sum of sales of all policies purchased in year 0
-  # year <- c(0)
-  # benefits_paid <- c(0)
-  # invested <- c(initial_profit * reinvestment_percent)
-  # ROI <- c(0)
-  # sold_policies <- c(initial_profit)
-  # ROI_adjusted_profit <- c(initial_profit)
-  
-  
-  
   # Begin loop for creating random starting policy holders for fund_value simulation
-  cat(sprintf("Beginning projected profits for the next %s years...\n", company_years))
+  cat(sprintf("Begin generating random starting policy holders for %s years...\n", company_years))
   startTime <- Sys.time()
   
   for (i in 2:company_years){
@@ -241,46 +228,40 @@ for (input_index in 1:length(user_input$age_range_start)) {
     one_year_payout = 0
     for (j in 1:nrow(policies)){
       matured = (policies$StartAge[j] + policies$policyAge[j] > policies$MatAge[j])       # has the policy matured?
-      not_dead = (policies$StartAge[j] + policies$policyAge[j] < policies$DeathAge[j])    # has the policy holder died?
-      if (isTRUE(matured) && isTRUE(not_dead)) {
-        loss = 12 * monthly_annuity
-        policies$benefitPayout[j] = loss
-        one_year_payout = one_year_payout + loss
-      }
-      if (isFALSE(not_dead)){
-        policies$Reserve[j] = 0.0
-        
-      }
-      else{
-        policies$Reserve[j] = WNS_reserve(policies$StartAge[j], policies$MatAge[j], i)
+      dead = (policies$StartAge[j] + policies$policyAge[j] > policies$DeathAge[j])        # has the policy holder died?
+      
+      # if matured and not dead
+      if (isTRUE(matured) && isFALSE(dead)) {                                                        
+        one_year_payout = 12 * monthly_annuity
+        policies$benefitPayout[j] = one_year_payout
+        policies$Reserve[j] = WNS_reserve(policies$StartAge[j], policies$MatAge[j], company_years + 1)
       }
       
+      # if not matured and not dead
+      else if(isFALSE(matured) && isFALSE(dead)) {
+        policies$Reserve[j] = WNS_reserve(policies$StartAge[j], policies$MatAge[j], company_years + 1)
+        policies$benefitPayout[j] = 0.0
+      }
+      
+      # if dead
+      else if(isTRUE(dead)){
+        policies$Reserve[j] = 0.0
+        policies$benefitPayout[j] = 0.0
+      }
     
     }
     
     # add new policies sold
     new_policies <- lifetimes[sample(nrow(lifetimes),policy_sales_goal),]
-    policies <- rbind(policies,new_policies)
+    policies <- rbind(policies, new_policies)
     policies$policyAge <- policies$policyAge + 1 # increment policy ages
-    
-    # # concatenate data from loop to ROI variables
-    # year <- c(year, i-1)
-    # benefits_paid <- c(benefits_paid, one_year_payout)
-    # sold_policies <- c(sold_policies, sum(new_policies$PolicyCost))
-    # ROI <- c(ROI, invested[i-1] * ROI_interest) 
-    # # This reinvests the ROI for the year and the reinvestment_percent value of the policies_sale_goal sold for the year 
-    # invested <- c(invested, ROI[i] + invested[i-1] + (sold_policies[i] * reinvestment_percent) )
-    # ROI_adjusted_profit <- c(ROI_adjusted_profit, (invested[i] + sold_policies[i] - (sold_policies[i] * reinvestment_percent) - one_year_payout))
-    # 
+
   } # End creating random starting policy holders for fund_value simulation
   
   endTime <- Sys.time()
   elapsedTime = endTime - startTime
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
-  
-  # Add ROI variables to data frame
-  #ROI_tracker <- data.frame(year, benefits_paid, ROI, invested, sold_policies, ROI_adjusted_profit)
-  
+
   
   # -------------------- WIP - Fund Value Function ------------------- #
   
@@ -291,37 +272,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # Take random sample from policies from random starting policy holders created
   # These policies have "policy ages" which we can use to have some mature policies at time zero
   # TODO have user input of number of starting fund_policies?
-  fund_policies <- policies[sample(nrow(policies), 10),]
-  
-  # Create fund value table variables at year zero
-  # fund_table <- data.frame(year_num = integer(),
-  #                                num_premiums_sold = integer(),
-  #                                premium_sold_value = double(),
-  #                                total_reserve = double(),
-  #                                total_benefit_payout = double(),
-  #                                yearly_ROI = double(),
-  #                                yearly_ATP = double(),
-  #                                ATP_plus_ROI = double(),
-  #                                fund_value = double(),
-  #                                num_payouts = integer(),
-  #                                accumulated_deaths = integer(),
-  #                                unmatured_policies = integer(),
-  #                                profit = double())
-  
-  # Assign values to year 0 
-  # fund_table[1,] <- c(0,
-  #                           0,
-  #                           0,
-  #                           sum(fund_policies$Reserve),
-  #                           sum(fund_policies$benefitPayout),
-  #                           1 + ROI_interest,
-  #                           0,
-  #                           0,
-  #                           100000,
-  #                           0,
-  #                           0, 
-  #                           0,
-  #                           0)
+  fund_policies <- policies[sample(nrow(policies), 100),]
   
   year_num              <- c(0)
   num_premiums_sold     <- c(0)
@@ -338,63 +289,49 @@ for (input_index in 1:length(user_input$age_range_start)) {
   unmatured_policies    <- c(0)
   
   # TODO, have user input for number of years?
-  years = 20
-  #month_num = 1 # counter for month number
+  years = 25
   
   for (year in 2:years){
-    
-    # for (month in 2:13){
-    #   # Keep running total of months
-    #   month_num = month_num + 1
       
-      # For each year, calculate the benefit payout value and reserve
-      # Also keeps track of number of payouts, total deaths, and unmatured policies
-    one_month_payout = 0
+    # For each year, calculate the benefit payout value and reserve
+    # Also keeps track of number of payouts, total deaths, and unmatured policies
+    one_year_payout = 0
     payouts = 0
     deaths = 0
     unmatured = 0
     for (j in 1:nrow(fund_policies)){
-      matured = (fund_policies$StartAge[j] + fund_policies$policyAge[j] > fund_policies$MatAge[j])       # has the policy matured?
-      dead = (fund_policies$StartAge[j] + fund_policies$policyAge[j] > fund_policies$DeathAge[j])    # has the policy holder died?
+      matured = (fund_policies$StartAge[j] + fund_policies$policyAge[j] > fund_policies$MatAge[j])      # has the policy matured?
+      dead = (fund_policies$StartAge[j] + fund_policies$policyAge[j] > fund_policies$DeathAge[j])       # has the policy holder died?
       
-      if (isTRUE(matured) && isFALSE(dead)) {                                                         # if yes to both, add payout value
+      # if not matured and not dead
+      if(isFALSE(matured) && isFALSE(dead)) {
+        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], fund_policies$MatAge[j], year + 1)
+        unmatured = unmatured + 1
+        fund_policies$benefitPayout[j] = 0.0
+      }
+      
+      # if matured and not dead
+      else if(isTRUE(matured) && isFALSE(dead)) {                                                        
         one_year_payout = 12 * monthly_annuity
         fund_policies$benefitPayout[j] = one_year_payout
+        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], fund_policies$MatAge[j], year + 1)
         payouts = payouts + 1
       }
-      
-      if(isTRUE(dead)){
+
+      # if dead
+      else if(isTRUE(dead)){
         deaths = deaths + 1
         fund_policies$Reserve[j] = 0.0
-        #fund_policies$benefitPayout = 0.0
-      }
-      
-      else{
-        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], fund_policies$MatAge[j], year + 1)
-      }
-      if (isFALSE(matured) && isFALSE(dead)){
-        unmatured = unmatured + 1
+        fund_policies$benefitPayout[j] = 0.0
       }
     }
     
     # Sell n premiums per year, add to fund_policies table
+    # TODO do not "sell* more policies, remove this 
+    # need to simulated "worst case" of not selling any more policies each year
     new_policies <- lifetimes[sample(nrow(lifetimes), policy_sales_goal),]
     fund_policies <- rbind(fund_policies, new_policies)
-    
-    # # Assign values to monthly variables
-    # fund_table[nrow(fund_table) + 1,] <- c(year - 1,                         # year
-    #                                        policy_sales_goal,                # num_premiums_sold
-    #                                        sum(new_policies$PolicyCost),     # total premium sold value
-    #                                        sum(fund_policies$Reserve),       # total reserve value
-    #                                        sum(fund_policies$benefitPayout), # total benefit payout
-    #                                        1 + ROI_interest,                 # yearly ROI
-    #                                        fund_table$fund_value[year - 1] + fund_table$premium_sold_value[year], # yearly_ATP
-    #                                        fund_table$yearly_ATP[year] * fund_table$yearly_ROI[year],             # ATP_plus_ROI
-    #                                        fund_table$ATP_plus_ROI[year] - fund_table$total_benefit_payout[year], # fund value
-    #                                        payouts,                                                               # num payouts
-    #                                        deaths,                                                                # num accumulated deaths
-    #                                        unmatured,                                                             # num unmatured policies
-    #                                        fund_table$fund_value[year] - fund_table$total_reserve[year])          # profit value
+
     year_num            <- c(year_num, year - 1)
     num_premiums_sold   <- c(num_premiums_sold, policy_sales_goal)
     premium_sold_value  <- c(premium_sold_value, sum(new_policies$PolicyCost))
@@ -403,7 +340,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
     total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
     yearly_ROI          <- c(yearly_ROI, 1 + ROI_interest)
     yearly_ATP          <- c(yearly_ATP, (fund_value[year - 1] + premium_sold_value[year])) # ATP is Accumulated Total Premium
-    ATP_plus_ROI        <- c(ATP_plus_ROI, (yearly_ATP[year] * yearly_ROI[year]))
+    ATP_plus_ROI        <- c(ATP_plus_ROI, (yearly_ATP[year] * yearly_ROI[year]**12))
     fund_value          <- c(fund_value, (ATP_plus_ROI[year] - total_benefit_payout[year]))
     profit              <- c(profit, (fund_value[year] - total_reserve[year]))
     accumulated_deaths  <- c(accumulated_deaths, deaths)
@@ -435,12 +372,22 @@ for (input_index in 1:length(user_input$age_range_start)) {
 
   # Graphing fund value over time
   # NOTE: to add multiple lines, convert from wide to long data (use melt())
-  fund_plot <- ggplot(fund_table, aes(year_num, profit)) + 
-    ggtitle("Monthly Fund Value") +
-    labs(x = "Time (Months)", y = "Fund Value (Dollars)") +
+  fund_plot <- ggplot(fund_table, aes(year_num)) + 
+    ggtitle("Monetary Value over Years") +
+    labs(x = "Time (Years)", y = "Monetary Value") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(year_num, profit), colour = "deepskyblue3", size = 1)
+    geom_point(aes(y = profit), colour = "deepskyblue3", size = 1) + 
+    geom_point(aes(y = fund_value), colour = "red", size = 1) + 
+    geom_point(aes(y = total_benefit_payout), colour = "green", size = 1) + 
+    geom_point(aes(y = premium_sold_value), colour = "orange", size = 1)
+    
   print(fund_plot)
+  
+  # TODO make graph (like one above) with a legend 
+  # Need to convert wide data to long before graphing
+  # subset necessary columns
+  #fund_table_sub <- fund_table[,3, 6, 10, 11]
+ 
   
   # # 3D Surface
   # p <- add_surface(plot_ly(x = fund_table$monthly_ATP, y = fund_table$premium_sold_value, z = cbind(fund_table$fund_value, fund_table$fund_value))) %>%
