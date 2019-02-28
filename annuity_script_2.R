@@ -340,7 +340,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   years = 5 
   #month_num = 1 # counter for month number
   
-  for (year in 1:years){
+  for (year in 2:years){
     
     # for (month in 2:13){
     #   # Keep running total of months
@@ -374,7 +374,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
       fund_policies <- rbind(fund_policies, new_policies)
       
       # Assign values to monthly variables
-      fund_table[nrow(fund_table) + 1,] <- c(year,
+      fund_table[nrow(fund_table) + 1,] <- c(year - 1,
                                              sales_goal,
                                              sum(new_policies$PolicyCost),
                                              sum(fund_policies$Reserve),
