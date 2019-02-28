@@ -329,7 +329,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
       premium_sold_value  <- c(premium_sold_value, sum(new_policies$PolicyCost))
       yearly_ROI         <- c(yearly_ROI, 1 + ROI_interest)
       yearly_ATP         <- c(yearly_ATP, (fund_value[year - 1] + premium_sold_value[year])) # ATP is Accumulated Total Premium 
-      ATP_plus_ROI        <- c(ATP_plus_ROI, (monthly_ATP[month_num] * monthly_ROI[month_num]))
+      ATP_plus_ROI        <- c(ATP_plus_ROI, (yearly_ATP[year] * yearly_ROI[year]))
       fund_value          <- c(fund_value, (ATP_plus_ROI[year] - total_benefit_payout[year]))
       num_payouts         <- c(num_payouts, payouts)
       accumulated_deaths  <- c(accumulated_deaths, deaths)
