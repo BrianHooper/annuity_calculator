@@ -39,7 +39,7 @@ if(length(user_input) < 1) {
   stop("ROI input file has too many rows\n")
 } else if(ncol(user_input) != 6) {
   stop("user_input file is incorrectly formatted\n")
-} else if(ncol(ROI_input) != 4) {
+} else if(ncol(ROI_input) != 3) {
   stop("user_input file is incorrectly formatted\n")
 }
 
@@ -55,8 +55,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # Read ROI input data to for projection of company yearly profits
   company_years = ROI_input[roi_index,1]         
   ROI_interest = ROI_input[roi_index,2]         
-  reinvestment_percent = ROI_input[roi_index,3] 
-  policy_sales_goal = ROI_input[roi_index,4]  # sales goal for number of policies sold per year
+  policy_sales = ROI_input[roi_index,3] # number of policies to start profit simulation
   
   if(roi_index < length((ROI_input$company_years))) {
     roi_index = roi_index + 1
@@ -125,11 +124,10 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # @param time_unit The unit of time (usually year) that describes the age of the policy
   # @return A double representing the Net Single Premium that was paid for the policy
   WNS_reserve <- function(in_age, mat_age, time_unit){
-    # TODO add some logic in here about returning zero if policy holder dies
-    xEy = (life_table$lx[mat_age + time_unit] / life_table$lx[in_age + time_unit]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
-    return(monthly_annuity * 12 * (a12 * ax[mat_age + time_unit] - b12) * xEy)
+    # TODO something wrong with calculation - fund value is wonky sometimes (run simulation to see)
+    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + time_unit]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
+    return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
   }
-  
   
   # Function for determining Whole Life Net Single Premium Profit for company, aka policy premium price
   #
@@ -178,10 +176,10 @@ for (input_index in 1:length(user_input$age_range_start)) {
   lifetimes <- data.frame(StartAge = integer(), 
                           MatAge = integer(), 
                           DeathAge = integer(),
-                          policyAge = integer(),
                           PolicyCost = double(),
                           Reserve = double(),
-                          benefitPayout = double())
+                          benefitPayout = double(),
+                          isDead = logical())
                             
 
   # Begin simulate a number of lifetimes (iterations)
@@ -206,94 +204,39 @@ for (input_index in 1:length(user_input$age_range_start)) {
     lifetimes[nrow(lifetimes) + 1,] <- c(input_age, 
                                          maturity_age, 
                                          death_age,
-                                         0, # policy age
                                          WNS_profit(input_age, maturity_age), 
                                          WNS_reserve(input_age, maturity_age, 1),
-                                         0.0) # benefits paid out
+                                         0.0,
+                                         FALSE) # benefits paid out
   } # End simulate lifetimes
   
   endTime <- Sys.time()
   elapsedTime = endTime - startTime
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
-  
-  
-  # # Draws random sample from the simulated lifetimes above
-  # policies <- lifetimes[sample(nrow(lifetimes), policy_sales_goal),]
-  # 
-  # # Begin loop for creating random starting policy holders for fund_value simulation
-  # cat(sprintf("Begin generating random starting policy holders for %s years...\n", company_years))
-  # startTime <- Sys.time()
-  # 
-  # for (i in 2:company_years){
-  #   # checking the current age of the policy holder (if mature, and the policy holder is not dead yet)
-  #   one_year_payout = 0
-  #   for (j in 1:nrow(policies)){
-  #     matured = (policies$StartAge[j] + policies$policyAge[j] > policies$MatAge[j])       # has the policy matured?
-  #     dead = (policies$StartAge[j] + policies$policyAge[j] > policies$DeathAge[j])        # has the policy holder died?
-  #     
-  #     # if matured and not dead
-  #     if (isTRUE(matured) && isFALSE(dead)) {                                                        
-  #       one_year_payout = 12 * monthly_annuity
-  #       policies$benefitPayout[j] = one_year_payout
-  #       policies$Reserve[j] = WNS_reserve(policies$StartAge[j], policies$MatAge[j], company_years + 1)
-  #     }
-  #     
-  #     # if not matured and not dead
-  #     else if(isFALSE(matured) && isFALSE(dead)) {
-  #       policies$Reserve[j] = WNS_reserve(policies$StartAge[j], policies$MatAge[j], company_years + 1)
-  #       policies$benefitPayout[j] = 0.0
-  #     }
-  #     
-  #     # if dead
-  #     else if(isTRUE(dead)){
-  #       policies$Reserve[j] = 0.0
-  #       policies$benefitPayout[j] = 0.0
-  #     }
-  #   
-  #   }
-  #   
-  #   # add new policies sold
-  #   new_policies <- lifetimes[sample(nrow(lifetimes),policy_sales_goal),]
-  #   policies <- rbind(policies, new_policies)
-  #   policies$policyAge <- policies$policyAge + 1 # increment policy ages
-  # 
-  # } # End creating random starting policy holders for fund_value simulation
-  # 
-  # endTime <- Sys.time()
-  # elapsedTime = endTime - startTime
-  # cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 
+    
+  # -------------------- Fund Value and Profit Simulation ---------------------- #
   
-  # -------------------- WIP - Fund Value Function ------------------- #
-  
-  # Begin loop for creating a fund value at time t table
+  # Begin loop for creating a fund and profit value
   cat(sprintf("Beginning calculating aggregate account value...\n"))
   startTime <- Sys.time()
   
-  # Take random sample from policies from random starting policy holders created
-  # These policies have "policy ages" which we can use to have some mature policies at time zero
-  # TODO have user input of number of starting fund_policies?
-  fund_policies <- lifetimes[sample(nrow(lifetimes), 1000),]
+  # Use generated lifetimes to project fund value and profit
+  fund_policies <- lifetimes
   
+  # Assign year zero values
   year_num              <- c(0)
-  #num_premiums_sold     <- c(0)
-  premium_sold_value    <- c(sum(fund_policies$PolicyCost))
   total_reserve         <- c(sum(fund_policies$Reserve))
   num_payouts           <- c(0)
   total_benefit_payout  <- c(0)
   yearly_ROI            <- c(0)
-  #yearly_ATP            <- c(0) # ATP is Accumulated Total Premium
-  #ATP_plus_ROI          <- c(0)
-  fund_value            <- c(sum(lifetimes$PolicyCost)) # TODO, what should the starting funds be?
+  fund_value            <- c(sum(fund_policies$PolicyCost)) 
   profit                <- c(fund_value[1] - total_reserve[1])
   accumulated_deaths    <- c(0)
   unmatured_policies    <- c(0)
   
-  # TODO, have user input for number of years? 
-  # NOTE Also some weird error with over around 45 years, starts entering NA into table
-  years = 45
-  
-  for (year in 2:years){
+  # Begin profit simulation loop
+  for (year in 2:(company_years+1)){
       
     # For each year, calculate the benefit payout value and reserve
     # Also keeps track of number of payouts, total deaths, and unmatured policies
@@ -302,8 +245,8 @@ for (input_index in 1:length(user_input$age_range_start)) {
     deaths = 0
     unmatured = 0
     for (j in 1:nrow(fund_policies)){
-      matured = (fund_policies$StartAge[j] + fund_policies$policyAge[j] > fund_policies$MatAge[j])      # has the policy matured?
-      dead = (fund_policies$StartAge[j] + fund_policies$policyAge[j] > fund_policies$DeathAge[j])       # has the policy holder died?
+      matured = (fund_policies$StartAge[j] + year - 1 > fund_policies$MatAge[j])      # has the policy matured?
+      dead = (fund_policies$StartAge[j] + year - 1 > fund_policies$DeathAge[j])       # has the policy holder died?
       
       # if not matured and not dead
       if(isFALSE(matured) && isFALSE(dead)) {
@@ -323,48 +266,34 @@ for (input_index in 1:length(user_input$age_range_start)) {
       # if dead
       else if(isTRUE(dead)){
         deaths = deaths + 1
+        fund_policies$isDead[j] = TRUE
         fund_policies$Reserve[j] = 0.0
         fund_policies$benefitPayout[j] = 0.0
       }
     }
-    
-    # Sell n premiums per year, add to fund_policies table
-    # TODO do not "sell* more policies, remove this 
-    # need to simulated "worst case" of not selling any more policies each year
-    # new_policies <- lifetimes[sample(nrow(lifetimes), policy_sales_goal),]
-    # fund_policies <- rbind(fund_policies, new_policies)
 
     year_num            <- c(year_num, year - 1)
-    #num_premiums_sold   <- c(num_premiums_sold, policy_sales_goal)
-    #premium_sold_value  <- c(premium_sold_value, sum(new_policies$PolicyCost))
     total_reserve       <- c(total_reserve, sum(fund_policies$Reserve))
     num_payouts         <- c(num_payouts, payouts)
     total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
-    # TODO add a calculation in here for the interest. Each year it increases. 1 + i = (1 + i/12)**12 
-    yearly_ROI          <- c(yearly_ROI, 1 + ROI_interest)
-    #yearly_ATP          <- c(yearly_ATP, (fund_value[year - 1] + premium_sold_value[year])) # ATP is Accumulated Total Premium
-    #ATP_plus_ROI        <- c(ATP_plus_ROI, (yearly_ATP[year] * yearly_ROI[year]**12))
-    #fund_value          <- c(fund_value, (ATP_plus_ROI[year] - total_benefit_payout[year]))
-    fund_value          <- c(fund_value, fund_value[year - 1] * yearly_ROI[year] - total_benefit_payout[year])
+    # TODO: Not sure if calculation for interest here is correct. 
+    # From the notes, 1 + i => (1 + (i/12))**12 in one year, but not sure how this translates to doing multiple years 
+    yearly_ROI          <- c(yearly_ROI, (1 + ROI_interest/12)**12)
+    fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
     profit              <- c(profit, (fund_value[year] - total_reserve[year]))
     accumulated_deaths  <- c(accumulated_deaths, deaths)
     unmatured_policies  <- c(unmatured_policies, unmatured)
     
-    # Increment policy ages after 1 year
-    fund_policies$policyAge <- fund_policies$policyAge + 1 # increment policy ages   
   
-  } # End num years
+  } # End profit simulation loop
  
-  # Add monthly values to fund_values table
+  
+  # Add yearly values to fund_values table
   fund_table <- data.frame(year_num,
-                           #num_premiums_sold,
-                           #premium_sold_value,
                            total_reserve,
                            num_payouts,
                            total_benefit_payout,
                            yearly_ROI,
-                           #yearly_ATP,
-                           #ATP_plus_ROI,
                            fund_value,
                            profit,
                            accumulated_deaths,
@@ -375,52 +304,48 @@ for (input_index in 1:length(user_input$age_range_start)) {
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 
   # Graphing fund value over time
-  # NOTE: to add multiple lines, convert from wide to long data (use melt())
+  # TODO make line graph with multiple variables and a legend 
+  #      to do this we need to convert wide data to long before graphing, use melt() to do this
+  # TODO add code to save to file
   fund_plot <- ggplot(fund_table, aes(year_num)) + 
     ggtitle("Monetary Value over Years") +
     labs(x = "Time (Years)", y = "Monetary Value") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(y = profit), colour = "deepskyblue3", size = 1) + 
-    geom_point(aes(y = fund_value), colour = "red", size = 1) + 
-    geom_point(aes(y = total_benefit_payout), colour = "green", size = 1)
-    #geom_point(aes(y = premium_sold_value), colour = "orange", size = 1)
+    geom_point(aes(y = profit), colour = "green", size = 1) + 
+    geom_point(aes(y = fund_value), colour = "deepskyblue2", size = 1) + 
+    geom_point(aes(y = total_benefit_payout), colour = "red", size = 1) +
+    geom_point(aes(y = total_reserve), colour = "orange", size = 1)
     
   print(fund_plot)
   
-  # TODO make graph (like one above) with a legend 
-  # Need to convert wide data to long before graphing
-  # subset necessary columns
-  #fund_table_sub <- fund_table[,3, 6, 10, 11]
- 
-  
-  # # 3D Surface
-  # p <- add_surface(plot_ly(x = fund_table$monthly_ATP, y = fund_table$premium_sold_value, z = cbind(fund_table$fund_value, fund_table$fund_value))) %>%
-  # layout(scene = list(xaxis = list(title = 'Accumulated Total Premium'),
-  #                     yaxis = list(title = 'Premiums Sold Value'),
-  #                     zaxis = list(title = 'Fund Value')))
-  # print(p)
-  # 
-  # # 3D Scatter
-  # fund3D<-data.frame(ATP = as.factor(fund_table$monthly_ATP),
-  #                    premiums = as.factor(fund_table$premium_sold_value),
-  #                    fundValue = as.factor(fund_table$fund_value))
-  # r <- plot_ly(fund3D, x = fund3D$ATP, y = fund3D$premiums, z = fund3D$fundValue) %>%
-  #   add_markers() %>%
-  #   layout(scene = list(xaxis = list(title = 'Accumulated Total Premium'),
-  #                       yaxis = list(title = 'Premiums Sold Value'),
-  #                       zaxis = list(title = 'Fund Value')))
-  # print(r)
-  # 
-  # #htmlwidgets::saveWidget(as_widget(p), "Scattered3DFundValues.html")
-  # 
-  # # 3D with plot3D
-  # library(plot3D)
+  # 3D Surface
+  # TODO make graph that makes sense, play with different variables
+  # TODO add code to save to file
+  p <- add_surface(plot_ly(x = fund_table$total_reserve, y = fund_table$fund_value, z = cbind(fund_table$profit, fund_table$profit))) %>%
+  layout(scene = list(xaxis = list(title = 'Reserve Value'),
+                      yaxis = list(title = 'Fund Value'),
+                      zaxis = list(title = 'Profit')))
+  print(p)
+
+  # 3D Scatter
+  # TODO make graph that makes sense, play with different variables
+  # TODO add code to save to file
+  fund3D<-data.frame(reserve = as.factor(fund_table$total_reserve),
+                     funds = as.factor(fund_table$fund_value),
+                     profit = as.factor(fund_table$profit))
+  r <- plot_ly(fund3D, x = fund3D$reserve, y = fund3D$funds, z = fund3D$profit) %>%
+    add_markers() %>%
+    layout(scene = list(xaxis = list(title = 'Total Reserve'),
+                        yaxis = list(title = 'Fund Value'),
+                        zaxis = list(title = 'Profit')))
+  print(r)
+
+  #htmlwidgets::saveWidget(as_widget(p), "Scattered3DFundValues.html")
+
+  # -------------------- End Fund Value and Profit Simulation ---------------- #
   
   
-  # -------------------- END WIP ------------------------------------- #
-  
-  
-  #------------------------- Graphing -------------------------------
+  # ------------------------ Graphing ---------------------------------------- #
   # Graphing age effect on mortality
   age_qx_plot <- ggplot(life_table, aes(age, qx)) + 
     ggtitle("Age Effect on Percent Mortality (qx)") +
@@ -466,21 +391,12 @@ for (input_index in 1:length(user_input$age_range_start)) {
   dev.copy(png,filename = paste(path_name, "hist_death.png", sep = ""))
   dev.off()
   
-  # # Yearly ROI adjusted profits
-  # ROI_plot <- ggplot(ROI_tracker, aes(year, ROI_adjusted_profit)) + 
-  #   ggtitle("Projected ROI Adjusted Gross Income") +
-  #   labs(x = "Time (Years)", y = "Yearly Profit (Dollars)") +
-  #   theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-  #   geom_point(aes(year, ROI_adjusted_profit), colour = "deepskyblue3", size = 1)
-  # print(ROI_plot)
-  # dev.copy(png,filename = paste(path_name, "roi_income.png", sep = ""))
-  # dev.off()
-  
+  # TODO adjust these precision format lines to new data 
   # # Adjusting table data to show 2 decimal precision for monetary values
   # lifetimes$PolicyCost <- format(round(lifetimes$PolicyCost, digits = 2), nsmall = 2)
   # lifetimes$GrossProfit <- format(round(lifetimes$GrossProfit, digits = 2), nsmall = 2)
   # ROI_tracker[,2:6] <- format(round(ROI_tracker[,2:6], digits = 2), nsmall = 2)
   # 
-  # write.csv(lifetimes, paste(path_name, "policies.csv", sep = ""), row.names = FALSE)
-  # write.csv(ROI_tracker, paste(path_name, "profit_projections.csv", sep = ""), row.names = FALSE)
+  write.csv(lifetimes, paste(path_name, "policies.csv", sep = ""), row.names = FALSE)
+  write.csv(fund_table, paste(path_name, "profit_projections.csv", sep = ""), row.names = FALSE)
 }
