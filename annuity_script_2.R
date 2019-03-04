@@ -9,6 +9,9 @@
 
 library(ggplot2)
 library(plotly)
+library(plot3D)
+library(car)
+library(rgl)
 
 if(!file.exists("USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv")) {
   stop("missing mortality table in file \"USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv\"\n")
@@ -339,6 +342,20 @@ for (input_index in 1:length(user_input$age_range_start)) {
                         yaxis = list(title = 'Fund Value'),
                         zaxis = list(title = 'Profit')))
   print(r)
+   ##using plot3D library box_scatter_3d 
+  fund_plot_3d <- scatter3D(fund_table$total_reserve, fund_table$fund_value,fund_table$profit, pch = 18, bty = "u", colkey = FALSE, main = "bty= 'u'", col.panel ="steelblue", 
+                            expand =0.4, col.grid = "darkblue", xlab = '3d_Total_Reserve', ylab = "3d_Fund_Value", zlab ="3d_Profit")
+  print(fund_plot_3d)
+   
+   ##using car library 
+  total_reserve <- iris$Sepal.Length
+  year_num<- iris$Sepal.Width
+  profit <- iris$Petal.Length
+  s <- scatter3d(x=total_reserve, y= year_num,z = profit)
+  print(s)
+  ##with group
+  group <- scatter3d(x=total_reserve, y= year_num,z = profit, groups = iris$Species, fit = "smooth")
+  print(group) 
 
   #htmlwidgets::saveWidget(as_widget(p), "Scattered3DFundValues.html")
 
