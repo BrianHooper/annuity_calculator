@@ -123,11 +123,19 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # @param mat_age The age in which the policy matures
   # @param time_unit The unit of time (usually year) that describes the age of the policy
   # @return A double representing the Net Single Premium that was paid for the policy
-  WNS_reserve <- function(in_age, mat_age, time_unit){
-    # TODO something wrong with calculation - fund value is wonky sometimes (run simulation to see)
-    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + time_unit]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
-    return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
+#  WNS_reserve <- function(in_age, mat_age, time_unit){
+#    # TODO something wrong with calculation - fund value is wonky sometimes (run simulation to see)
+#    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + time_unit]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
+#    return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
+#  }
+  ##########
+  WNS_reserve <- function(in_age, time_unit){
+    x = in_age
+    Axt = life_table$ax[x + time_unit]
+    return(monthly_annuity * 12 * Axt)
   }
+  ###########  
+  
   
   # Function for determining Whole Life Net Single Premium Profit for company, aka policy premium price
   #
@@ -205,13 +213,13 @@ for (input_index in 1:length(user_input$age_range_start)) {
                                          maturity_age, 
                                          death_age,
                                          WNS_profit(input_age, maturity_age), 
-                                         WNS_reserve(input_age, maturity_age, 1),
+                                         WNS_reserve(input_age, 1),
                                          0.0,
                                          FALSE) # benefits paid out
   } # End simulate lifetimes
   
   endTime <- Sys.time()
-  elapsedTime = endTime - startTime
+  elapsedTime <- endTime - startTime
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 
     
@@ -236,7 +244,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   unmatured_policies    <- c(0)
   
   # Begin profit simulation loop
-  for (year in 2:(company_years+1)){
+  for (year in 2:(company_years + 1)){
       
     # For each year, calculate the benefit payout value and reserve
     # Also keeps track of number of payouts, total deaths, and unmatured policies
@@ -248,9 +256,18 @@ for (input_index in 1:length(user_input$age_range_start)) {
       matured = (fund_policies$StartAge[j] + year - 1 > fund_policies$MatAge[j])      # has the policy matured?
       dead = (fund_policies$StartAge[j] + year - 1 > fund_policies$DeathAge[j])       # has the policy holder died?
       
+      #############
+      if (fund_policies$DeathAge[j] - fund_policies$StartAge[j] - year - 1 > 0){
+        years_before_death = fund_policies$DeathAge[j] - fund_policies$StartAge[j] - year - 1
+      } 
+      else{
+        years_before_death = 0
+      }
+      ##############
+      
       # if not matured and not dead
       if(isFALSE(matured) && isFALSE(dead)) {
-        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], fund_policies$MatAge[j], year - 1)
+        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
         unmatured = unmatured + 1
         fund_policies$benefitPayout[j] = 0.0
       }
@@ -259,7 +276,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
       else if(isTRUE(matured) && isFALSE(dead)) {                                                        
         one_year_payout = 12 * monthly_annuity
         fund_policies$benefitPayout[j] = one_year_payout
-        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], fund_policies$MatAge[j], year - 1)
+        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
         payouts = payouts + 1
       }
 
@@ -278,7 +295,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
     total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
     # TODO: Not sure if calculation for interest here is correct. 
     # From the notes, 1 + i => (1 + (i/12))**12 in one year, but not sure how this translates to doing multiple years 
-    yearly_ROI          <- c(yearly_ROI, (1 + ROI_interest/12)**12)
+    yearly_ROI          <- c(yearly_ROI, ROI_interest)
     fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
     profit              <- c(profit, (fund_value[year] - total_reserve[year]))
     accumulated_deaths  <- c(accumulated_deaths, deaths)
@@ -300,7 +317,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
                            unmatured_policies)
   
   endTime <- Sys.time()
-  elapsedTime = endTime - startTime
+  elapsedTime <- endTime - startTime
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 
   # Graphing fund value over time
