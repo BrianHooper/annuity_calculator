@@ -1,0 +1,89 @@
+% Compile this file once with pdflatex
+% then compile the .bib file (referenced in the last slide 
+% with the \bibliography command using bibtex
+% then recompile this file twice more with pdflatex
+% (Once for the bibliography, and another for inline citations
+
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsfonts}
+\usepackage{color}
+\usepackage{import}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{url}
+\usepackage{float}
+\usepackage{chngpage}
+\setlength{\parindent}{0em}
+\setlength{\parskip}{1em}
+
+\title{\textbf{Insurance annuity calculator in R} \\ User Manual}
+\author{Brian Hooper, Heather McKinnon, Divya Kalla Chandrika  \\ Central Washington University}
+\date{March 6th, 2019}
+
+\begin{document}
+	\maketitle
+	
+	\section{Introduction}
+	This document describes the use and function of the \textit{Annuity calculator} written in R. The program is intended to simulate 10,000 independent customers purchasing an annuities using a mortality table. An input file provided to the program will give a initial age range that will be used to randomly select a starting age, or the age that the person will purchase an annuity product. Then, the mortality table will be used to randomly select a death age based on the distribution provided by the mortality table. This can be used to calculate the amount of profit or loss for the insurance company for an individual annuity product.
+	
+	\section{Input}
+	Two auxiliary comma-separated-value files are required to use the script: \textit{simulation\_input.csv} and \textit{mortality.csv}. The \textit{simulation\_input.csv} contains the following input parameters that should be provided to the script, shown in Table \ref{tbl:description}: 
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|l|l|}
+		\hline
+		age\_range\_start & The lower bound of the age range for purchasing annuity \\ \hline
+		age\_range\_end & The upper bound of the age range for purchasing annuity \\ \hline
+		maturity\_age & The age at which the annuity matures \\ \hline
+		monthly\_annuity & The desired monthly annuity benefit \\ \hline
+		interest\_rate & The interest rate \\ \hline
+		iterations & The number of simulations to run \\ \hline
+		company\_years & Number of years to simulate \\ \hline
+		ROI\_interest & Interest rate of ROI\\ \hline
+	\end{tabular}
+	\caption{Input parameter descriptions}
+	\label{tbl:description}
+\end{table}
+
+Note that column headers age\_range\_start, age\_range\_end, etc are required for the script to function correctly. Each row of the input column will represent a single simulation. An example \textit{simulation\_input.csv} file is shown in Table \ref{example}. In this case, the program will simulate a group of 10000 individuals, aged 25 to 50, purchasing a \$500 annuity benefit that matures at age 65, simulating 76 years of 5%% ROI. 
+
+
+
+\begin{table}[H]
+	\centering
+	\resizebox{\columnwidth}{!}{%
+		\begin{tabular}{|c|c|c|c|c|c|c|c|}
+	\hline
+	\textbf{age\_range\_start} & \textbf{age\_range\_end} & \textbf{maturity\_age} & \textbf{monthly\_annuity} & \textbf{interest\_rate} & \textbf{iterations} & \textbf{company\_years} & \textbf{ROI\_interest}\\ \hline
+	25 & 50 & 65 & 500 & 0.05 & 10000 & 76 & 0.05 \\ \hline
+\end{tabular}
+	}
+		\label{example}
+\caption{Example \textit{simulation\_input.csv} file}
+	
+\end{table}
+
+The \textit{mortality.csv} file should contain two columns: an \textit{age} column containing a list of integer ages, and a \textit{mortality} column containing the probability of death at each age. An example \textit{mortality.csv} file is given in Table \ref{mortality}. 
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		Age & Mortality \\ \hline
+		0 & 0.02042 \\ \hline
+		1 & 0.00133 \\ \hline
+		2 & 0.00122 \\ \hline
+		... & ... \\ \hline
+		98 & 0.67499 \\ \hline
+	\end{tabular}
+	\caption{Example \textit{mortality.csv} file}
+	\label{mortality}
+\end{table}
+
+
+\section{Use}
+
+To run the program, simply use the \textit{source} command from within RStudio, or another R interface running R version 3.5.1 or greater. It may be necessary to first set the working directory to the directory containing the \textit{input.csv} files using either the \textit{setwd()} command or using \textit{Session $\rightarrow$ Set working directory $\rightarrow$ to source file location}. The program will output a report and a set of tables containing the expected profit or loss to the company based on the simulated business block. Plots and output will be placed in the \textit{output} folder, with a single subfolder for each row in the input file. 
+
+\end{document}
