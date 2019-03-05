@@ -105,7 +105,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   ax = life_table$ax
   Ax = life_table$Ax
   
-  # Function for determining the reserve at time, time_unit. E.g. first year of policy is time 1, second year is time 2, etc.
+  # Function for determining the reserve at time_unit (year)
   #
   # @param in_age The input age for beginning the insurance policy
   # @param time_unit The unit of time (year) that describes the age of the policy
@@ -175,8 +175,8 @@ for (input_index in 1:length(user_input$age_range_start)) {
                                          death_age,
                                          WNS_profit(input_age, maturity_age), 
                                          WNS_reserve(input_age, 1),
-                                         0.0,
-                                         FALSE) # benefits paid out
+                                         0.0,   # benefits paid out
+                                         FALSE) # isDead?
   } # End simulate lifetimes
   
   endTime <- Sys.time()
@@ -216,15 +216,6 @@ for (input_index in 1:length(user_input$age_range_start)) {
     for (j in 1:nrow(fund_policies)){
       matured = (fund_policies$StartAge[j] + year - 1 > fund_policies$MatAge[j])      # has the policy matured?
       dead = (fund_policies$StartAge[j] + year - 1 > fund_policies$DeathAge[j])       # has the policy holder died?
-      
-      #############
-      if (fund_policies$DeathAge[j] - fund_policies$StartAge[j] - year - 1 > 0){
-        years_before_death = fund_policies$DeathAge[j] - fund_policies$StartAge[j] - year - 1
-      } 
-      else{
-        years_before_death = 0
-      }
-      ##############
       
       # if not matured and not dead
       if(isFALSE(matured) && isFALSE(dead)) {
@@ -279,76 +270,111 @@ for (input_index in 1:length(user_input$age_range_start)) {
                            unmatured_policies)
   
   
-  # ------------------------ Graphing ---------------------------------------- #
+  # ------------------------ Graphing and Saving Output ------------------------------ #
 
   cat(sprintf("Creating graphs and saving to output file...\n"))
   startTime <- Sys.time()
   
-  # Graphing fund value over time
-  # TODO make line graph with multiple variables and a legend 
-  #      to do this we need to convert wide data to long before graphing, use melt() to do this
-  # TODO add code to save to file
-  long_fund_data <- melt(fund_table, id.vars = "year_num", measure.vars = c("total_reserve","total_benefit_payout","fund_value", "profit"))
-  fund_line_plot <- ggplot(data = long_fund_data, aes(x = year_num, y = value, colour = variable)) + 
+  # Graphing a line plot of the profit and fund values over time
+  long_fund_data <- melt(fund_table, id.vars = "year_num", 
+                         measure.vars = c("total_reserve","total_benefit_payout","fund_value", "profit"),
+                         variable.name = "Variables")
+  fund_line_plot <- ggplot(data = long_fund_data, aes(x = year_num, y = value, colour = Variables)) + 
     ggtitle("Monetary Value over Years") +
     labs(x = "Time (Years)", y = "Monetary Value") +
-    theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_line(size = 1) 
+    theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), 
+          axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+    scale_color_manual(labels = c("Reserve", "Benefit Payout", "Fund Value", "Profit"),
+                       values = c("orange", "red", "deepskyblue2", "green")) + geom_line(size = 1) 
     print(fund_line_plot)
-    
-  # 
-  # fund_plot <- ggplot(fund_table, aes(year_num)) + 
-  #   ggtitle("Monetary Value over Years") +
-  #   labs(x = "Time (Years)", y = "Monetary Value") +
-  #   theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-  #   geom_point(aes(y = profit), colour = "green", size = 1) + 
-  #   geom_point(aes(y = fund_value), colour = "deepskyblue2", size = 1) + 
-  #   geom_point(aes(y = total_benefit_payout), colour = "red", size = 1) +
-  #   geom_point(aes(y = total_reserve), colour = "orange", size = 1)
-  #   
-  # print(fund_plot)
+    dev.copy(png,filename = paste(path_name, "fund_line_plot.png", sep = ""))
+    dev.off()
   
   
-  # 3D Surface
-  # TODO make graph that makes sense, play with different variables
-  # TODO add code to save to file
-  p <- add_surface(plot_ly(x = fund_table$total_reserve, y = fund_table$fund_value, z = cbind(fund_table$profit, fund_table$profit))) %>%
-  layout(scene = list(xaxis = list(title = 'Reserve Value'),
-                      yaxis = list(title = 'Fund Value'),
-                      zaxis = list(title = 'Profit')))
-  print(p)
+  # Function for determining the profit over time for given interests
+  #
+  # @param interest The input interest rate
+  # @return A list of calculated profits
+  interests_profit <- function(interest){
 
-  # 3D Scatter
-  # TODO make graph that makes sense, play with different variables
-  # TODO add code to save to file
-  fund3D<-data.frame(reserve = as.factor(fund_table$total_reserve),
-                     funds = as.factor(fund_table$fund_value),
+    yearly_interest <- c((1 + (interest/12))**12)
+    f_value         <- c(fund_table$fund_value[1])
+    p               <- c(fund_table$profit[1])
+    
+    for (year in 2:nrow(fund_table)){
+      yearly_interest <- c(yearly_interest, (1 + (interest/12))**12)
+      f_value         <- c(f_value, (f_value[year - 1] * yearly_interest[year]) - fund_table$total_benefit_payout[year])
+      p               <- c(p, (f_value[year] - fund_table$total_reserve[year]))
+    }
+    return(p)
+  }
+  
+  # Make a profit matrix for 3D graphing
+  interests <- seq(0.05, 0.055, 0.0005)
+  yearSeq <- fund_table$year_num
+  profit_matrix <- matrix(,nrow = length(yearSeq), ncol = length(interests)) # empty matrix
+  column <- 1
+  for (i in interests){
+    profit_matrix[,column] <- interests_profit(i)
+    column <- column + 1
+  }
+  
+  # A wrapper to saveWidget which compensates for arguable BUG in
+  # saveWidget which requires `file` to be in current working
+  # directory from https://github.com/ramnathv/htmlwidgets/issues/299
+  #
+  # @param widget to be saved
+  # @param filename to be saved under
+  saveWidgetFix <- function (widget, filename) {
+    wd<-getwd()
+    on.exit(setwd(wd))
+    outDir <- paste(wd, path_name, sep="/")
+    file <- basename(filename)
+    setwd(outDir);
+    htmlwidgets::saveWidget(as_widget(widget), file = filename)
+  }
+  
+  # 3D Surface plot 
+  profit_3D_surface <- add_surface(plot_ly(x = interests, 
+                                           y = yearSeq, 
+                                           z = profit_matrix)) %>%
+  layout(title = "Varying Interest Rates on Profit Over Time",
+         scene = list(xaxis = list(title = 'Interest'),
+                      yaxis = list(title = 'Year'),
+                      zaxis = list(title = 'Profit')))
+  print(profit_3D_surface)
+  saveWidgetFix(profit_3D_surface, "profit_3D_surface.html")
+  
+  # 3D Scatter plot
+  fund3D <- data.frame(reserve = as.factor(fund_table$total_reserve),
+                     years = as.factor(fund_table$year_num),
                      profit = as.factor(fund_table$profit))
-  r <- plot_ly(fund3D, x = fund3D$reserve, y = fund3D$funds, z = fund3D$profit) %>%
-    add_markers() %>%
+  profit_3D_scatter <- plot_ly(fund3D, x = fund3D$reserve, y = fund3D$years, z = fund3D$profit) %>% add_markers() %>%
     layout(scene = list(xaxis = list(title = 'Total Reserve'),
-                        yaxis = list(title = 'Fund Value'),
+                        yaxis = list(title = 'Year'),
                         zaxis = list(title = 'Profit')))
-  print(r)
-   ##using plot3D library box_scatter_3d 
-  fund_plot_3d <- scatter3D(fund_table$total_reserve, fund_table$fund_value,fund_table$profit, pch = 18, bty = "u", colkey = FALSE, main = "bty= 'u'", col.panel ="steelblue", 
-                            expand =0.4, col.grid = "darkblue", xlab = '3d_Total_Reserve', ylab = "3d_Fund_Value", zlab ="3d_Profit")
+  print(profit_3D_scatter)
+  
+  
+  # plot3D library box_scatter_3d 
+  fund_plot_3d <- scatter3D(fund_table$total_reserve, 
+                            fund_table$year_num,
+                            fund_table$profit, 
+                            pch = 18, bty = "u", colkey = FALSE, main = "bty= 'u'", col.panel ="steelblue", 
+                            expand =0.4, col.grid = "darkblue", xlab = 'Total Reserve', ylab = "Year", zlab ="Profit")
   print(fund_plot_3d)
    
    ##using car library 
   total_reserve <- iris$Sepal.Length
   year_num<- iris$Sepal.Width
   profit <- iris$Petal.Length
-  s <- scatter3d(x=total_reserve, y= year_num,z = profit)
+  s <- scatter3D(x=total_reserve, y= year_num,z = profit)
   print(s)
   ##with group
-  group <- scatter3d(x=total_reserve, y= year_num,z = profit, groups = iris$Species, fit = "smooth")
+  group <- scatter3D(x=total_reserve, y= year_num, z = profit, groups = iris$Species, fit = "smooth")
   print(group) 
 
   #htmlwidgets::saveWidget(as_widget(p), "Scattered3DFundValues.html")
-
-  
-  
 
   # Graphing age effect on mortality
   age_qx_plot <- ggplot(life_table, aes(age, qx)) + 
@@ -394,13 +420,15 @@ for (input_index in 1:length(user_input$age_range_start)) {
   print(hist.death)
   dev.copy(png,filename = paste(path_name, "hist_death.png", sep = ""))
   dev.off()
+   
+  # Adjusting table data to show 2 decimal precision for monetary values
+  lifetimes$PolicyCost <- format(round(lifetimes$PolicyCost, digits = 2), nsmall = 2)
+  lifetimes$Reserve <- format(round(lifetimes$Reserve, digits = 2), nsmall = 2)
+  fund_table$total_reserve <- format(round(fund_table$total_reserve, digits = 2), nsmall = 2)
+  fund_table$total_benefit_payout <- format(round(fund_table$total_benefit_payout, digits = 2), nsmall = 2)
+  fund_table$fund_value <- format(round(fund_table$fund_value, digits = 2), nsmall = 2)
+  fund_table$profit <- format(round(fund_table$profit, digits = 2), nsmall = 2)
   
-  # TODO adjust these precision format lines to new data 
-  # # Adjusting table data to show 2 decimal precision for monetary values
-  # lifetimes$PolicyCost <- format(round(lifetimes$PolicyCost, digits = 2), nsmall = 2)
-  # lifetimes$GrossProfit <- format(round(lifetimes$GrossProfit, digits = 2), nsmall = 2)
-  # ROI_tracker[,2:6] <- format(round(ROI_tracker[,2:6], digits = 2), nsmall = 2)
-  # 
   write.csv(lifetimes, paste(path_name, "policies.csv", sep = ""), row.names = FALSE)
   write.csv(fund_table, paste(path_name, "profit_projections.csv", sep = ""), row.names = FALSE)
   
