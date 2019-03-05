@@ -12,15 +12,14 @@ library(plotly)
 library(plot3D)
 library(car)
 library(rgl)
+library(reshape2) # for melting wide data into long data
 
 if(!file.exists("USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv")) {
   stop("missing mortality table in file \"USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv\"\n")
   quit(save = "no", status = 1)
-} else if(!file.exists("lifetimes_input.csv")) {
-  stop("missing input file \"lifetimes_input.csv\"\n")
-} else if(!file.exists("fund_values_input.csv")) {
-  stop("missing roi input file \"fund_values_input.csv\"\n")
-}
+} else if(!file.exists("simulation_input.csv")) {
+  stop("missing input file \"simulation_input.csv\"\n")
+} 
 
 if(!dir.exists("output")) {
   dir.create("output")
@@ -33,20 +32,14 @@ age = mortality_data[,1]
 qx = mortality_data[,2]
 
 # Read and assign input parameters
-user_input <- read.csv(file="lifetimes_input.csv", header = TRUE, sep = ",")
-ROI_input <- read.csv(file="fund_values_input.csv", header = TRUE, sep = ",")
+user_input <- read.csv(file="simulation_input.csv", header = TRUE, sep = ",")
 
 if(length(user_input) < 1) {
   stop("user input file is empty\n")
-} else if(length(user_input) < length(ROI_input)) {
-  stop("ROI input file has too many rows\n")
-} else if(ncol(user_input) != 6) {
+} else if(ncol(user_input) != 8) {
   stop("user_input file is incorrectly formatted\n")
-} else if(ncol(ROI_input) != 3) {
-  stop("user_input file is incorrectly formatted\n")
-}
+}  
 
-roi_index = 1
 for (input_index in 1:length(user_input$age_range_start)) {
   input_age_start = user_input[input_index,1]
   input_age_end = user_input[input_index,2]
@@ -54,15 +47,8 @@ for (input_index in 1:length(user_input$age_range_start)) {
   monthly_annuity = user_input[input_index,4]
   interest_rate = user_input[input_index,5]
   iterations = user_input[input_index,6]
-  
-  # Read ROI input data to for projection of company yearly profits
-  company_years = ROI_input[roi_index,1]         
-  ROI_interest = ROI_input[roi_index,2]         
-  policy_sales = ROI_input[roi_index,3] # number of policies to start profit simulation
-  
-  if(roi_index < length((ROI_input$company_years))) {
-    roi_index = roi_index + 1
-  }
+  company_years = user_input[input_index,7]
+  ROI_interest = user_input[input_index,8] 
   
   path_name = paste("output/output_", input_index, "/", sep="")
   if(!dir.exists(path_name)) {
@@ -88,7 +74,6 @@ for (input_index in 1:length(user_input$age_range_start)) {
   for (i in 2:length(life_table$qx)) {
     life_table$lx[i] <- life_table$lx[i-1] - life_table$dx[i-1]
     life_table$dx[i] <- life_table$lx[i] * life_table$qx[i]
-    
   }
   
   # Add Px
@@ -123,23 +108,14 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # Function for determining the reserve at time, time_unit. E.g. first year of policy is time 1, second year is time 2, etc.
   #
   # @param in_age The input age for beginning the insurance policy
-  # @param mat_age The age in which the policy matures
-  # @param time_unit The unit of time (usually year) that describes the age of the policy
-  # @return A double representing the Net Single Premium that was paid for the policy
-#  WNS_reserve <- function(in_age, mat_age, time_unit){
-#    # TODO something wrong with calculation - fund value is wonky sometimes (run simulation to see)
-#    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + time_unit]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
-#    return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
-#  }
-  ##########
+  # @param time_unit The unit of time (year) that describes the age of the policy
+  # @return A double representing the reserve value for the policy at that unit of time
   WNS_reserve <- function(in_age, time_unit){
     x = in_age
     Axt = life_table$ax[x + time_unit]
     return(monthly_annuity * 12 * Axt)
   }
-  ###########  
-  
-  
+
   # Function for determining Whole Life Net Single Premium Profit for company, aka policy premium price
   #
   # @param in_age The input age for beginning the insurance policy
@@ -159,29 +135,11 @@ for (input_index in 1:length(user_input$age_range_start)) {
   WNS_loss <- function(mat_age, death_age)
     return ((death_age - mat_age) * monthly_annuity * 12)
   
-  # Calculate gross profit or loss for Whole Life Net Single Premium
-  #
-  # @param in_age The input age for beginning the insurance policy
-  # @param mat_age The age in which the policy matures
-  # @param death_age The age in which the policy holder dies
-  # @return A double representing the gross profit or loss for a single policy holder
-  WNS_gross_profit <- function(in_age, mat_age, death_age){
-    profit <- WNS_profit(in_age, mat_age)
-    if (death_age <= maturity_age){
-      # cat(sprintf("input age: %s death age: %s Profit: %.2f\n", in_age, death_age, profit))
-      return (profit)
-    }
-    else{
-      loss <- WNS_loss(mat_age, death_age)
-      # cat(sprintf("input age: %s death age: %s Profit: %.2f loss: %.2f net: %.2f\n", in_age, death_age, profit, loss, (profit - loss)))
-      return (profit - loss)
-    }
-  }
   
-  # Display a single net premium price for user defined start and maturity age
-  cat(sprintf("A sample whole life single net premium price for input age %s with maturity age %s and $%.2f monthly benefit: $%.2f\n\n",
-              input_age_start, maturity_age, monthly_annuity, WNS_profit(input_age_start,maturity_age)))
-  
+  # # Display a single net premium price for user defined start and maturity age
+  # cat(sprintf("A sample whole life single net premium price for input age %s with maturity age %s and $%.2f monthly benefit: $%.2f\n\n",
+  #             input_age_start, maturity_age, monthly_annuity, WNS_profit(input_age_start,maturity_age)))
+  # 
   
   # Creating a table for the simulation data generated by the lifetimes simulations loop
   lifetimes <- data.frame(StartAge = integer(), 
@@ -229,7 +187,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # -------------------- Fund Value and Profit Simulation ---------------------- #
   
   # Begin loop for creating a fund and profit value
-  cat(sprintf("Beginning calculating aggregate account value...\n"))
+  cat(sprintf("Beginning calculating aggregate account value for %s years...\n", company_years))
   startTime <- Sys.time()
   
   # Use generated lifetimes to project fund value and profit
@@ -296,9 +254,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
     total_reserve       <- c(total_reserve, sum(fund_policies$Reserve))
     num_payouts         <- c(num_payouts, payouts)
     total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
-    # TODO: Not sure if calculation for interest here is correct. 
-    # From the notes, 1 + i => (1 + (i/12))**12 in one year, but not sure how this translates to doing multiple years 
-    yearly_ROI          <- c(yearly_ROI, ROI_interest)
+    yearly_ROI          <- c(yearly_ROI, (1 + (ROI_interest/12))**12)
     fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
     profit              <- c(profit, (fund_value[year] - total_reserve[year]))
     accumulated_deaths  <- c(accumulated_deaths, deaths)
@@ -307,6 +263,9 @@ for (input_index in 1:length(user_input$age_range_start)) {
   
   } # End profit simulation loop
  
+  endTime <- Sys.time()
+  elapsedTime <- endTime - startTime
+  cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
   
   # Add yearly values to fund_values table
   fund_table <- data.frame(year_num,
@@ -319,24 +278,36 @@ for (input_index in 1:length(user_input$age_range_start)) {
                            accumulated_deaths,
                            unmatured_policies)
   
-  endTime <- Sys.time()
-  elapsedTime <- endTime - startTime
-  cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
+  
+  # ------------------------ Graphing ---------------------------------------- #
 
+  cat(sprintf("Creating graphs and saving to output file...\n"))
+  startTime <- Sys.time()
+  
   # Graphing fund value over time
   # TODO make line graph with multiple variables and a legend 
   #      to do this we need to convert wide data to long before graphing, use melt() to do this
   # TODO add code to save to file
-  fund_plot <- ggplot(fund_table, aes(year_num)) + 
+  long_fund_data <- melt(fund_table, id.vars = "year_num", measure.vars = c("total_reserve","total_benefit_payout","fund_value", "profit"))
+  fund_line_plot <- ggplot(data = long_fund_data, aes(x = year_num, y = value, colour = variable)) + 
     ggtitle("Monetary Value over Years") +
     labs(x = "Time (Years)", y = "Monetary Value") +
     theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
-    geom_point(aes(y = profit), colour = "green", size = 1) + 
-    geom_point(aes(y = fund_value), colour = "deepskyblue2", size = 1) + 
-    geom_point(aes(y = total_benefit_payout), colour = "red", size = 1) +
-    geom_point(aes(y = total_reserve), colour = "orange", size = 1)
+    geom_line(size = 1) 
+    print(fund_line_plot)
     
-  print(fund_plot)
+  # 
+  # fund_plot <- ggplot(fund_table, aes(year_num)) + 
+  #   ggtitle("Monetary Value over Years") +
+  #   labs(x = "Time (Years)", y = "Monetary Value") +
+  #   theme(plot.title = element_text(hjust = 0.5, size = 16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) +
+  #   geom_point(aes(y = profit), colour = "green", size = 1) + 
+  #   geom_point(aes(y = fund_value), colour = "deepskyblue2", size = 1) + 
+  #   geom_point(aes(y = total_benefit_payout), colour = "red", size = 1) +
+  #   geom_point(aes(y = total_reserve), colour = "orange", size = 1)
+  #   
+  # print(fund_plot)
+  
   
   # 3D Surface
   # TODO make graph that makes sense, play with different variables
@@ -376,10 +347,9 @@ for (input_index in 1:length(user_input$age_range_start)) {
 
   #htmlwidgets::saveWidget(as_widget(p), "Scattered3DFundValues.html")
 
-  # -------------------- End Fund Value and Profit Simulation ---------------- #
   
   
-  # ------------------------ Graphing ---------------------------------------- #
+
   # Graphing age effect on mortality
   age_qx_plot <- ggplot(life_table, aes(age, qx)) + 
     ggtitle("Age Effect on Percent Mortality (qx)") +
@@ -433,4 +403,8 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # 
   write.csv(lifetimes, paste(path_name, "policies.csv", sep = ""), row.names = FALSE)
   write.csv(fund_table, paste(path_name, "profit_projections.csv", sep = ""), row.names = FALSE)
+  
+  endTime <- Sys.time()
+  elapsedTime <- endTime - startTime
+  cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 }
