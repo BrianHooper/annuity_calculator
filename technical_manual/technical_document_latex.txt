@@ -90,10 +90,13 @@
 \date{}
 
 \author{
-		Heather McKinnon, Brian Hooper, Divya Chandrika Kalla\\ 
-		Dr. Davendra \\
-		CS 565 Project 1 \\
-		Central Washington University  }
+        Brian Hooper \\ \href{mailto:brian.hooper@cwu.edu}{brian.hooper@cwu.edu}\and 
+        Divya Chandrika Kalla \\ \href{mailto:divyachandrika.kalla@cwu.edu}{divyachandrika.kalla@cwu.edu} \and 
+        Heather McKinnon \\ \href{mailto:heather.gammon@cwu.edu}{heather.gammon@cwu.edu} \\\\\\
+        Dr. Donald Davendra \\ 
+        Department of Computer Science \\
+        Central Washington University \\
+    }
 
 \maketitle
 \newpage
@@ -111,28 +114,30 @@
 
 % ----------------------- OVERVIEW ------------------------- %
 \section{Overview}
-This program uses mortality data from the \href{https://mort.soa.org/?_ga=2.155909691.1059898131.1547157104-186254515.1517263599}{Society of Actuaries Mortality Tables} to simulate a number of whole life single annuity premiums prices for an insurance company and produce projected annual profits. The mortality data is used to create a life table in which to draw from to create the policy table. The program will user input of a starting age range, maturity age, monthly annuity benefit, and interest rate and will create a simulated number of policies with random starting and death ages and their calculated premiums. This program will also simulate a profit for a projected number of years to see the insurance company's annual profit. These projected years will take user input of number of years, ROI interest, investment percentage, and a sales goal for number of policies to sell per year. Several graphs are produced to help illustrate these calculations.
+This program was coded as an R script (version 3.5.1) written in RStudio. It uses mortality data from the \href{https://mort.soa.org/?_ga=2.155909691.1059898131.1547157104-186254515.1517263599}{Society of Actuaries Mortality Tables} to simulate a number of whole life single annuity premiums prices for an insurance company and produce projected annual profits. The mortality data is used to create a life table which will calculate the annuity expected present value for given ages. The program will accept user input of a starting age range, maturity age, monthly annuity benefit, interest rate, number of policy holder lifetimes to generate, number of company years to simulate, and an ROI interest rate. Using the life table data and user input, the program will create a simulated number of policy holders' lifetimes with random starting and death ages and their calculated premiums. This program will also simulate a profit for a projected number of years to measure the insurance company's annual profit. Several graphs are produced to help illustrate these calculations and together with the tables are saved in an output folder in the same directory as the R script. The calculations and design of this program were advised by Dr. Chin-Mei Chueh, actuarial science professor and Society of Actuaries council member, and Dr. Donald Davendra, computer science professor.
 
 % ----------------------- INPUTS ------------------------- %
 \section{Inputs}
-The mortality data sets from the Society of Actuaries website contain a column for age and a column for the associated probability of death. It is downloaded as a .csv file and read into a variable, mortality\_data, in this program. Another .csv file is edited by the user and read into several other variables:
-\newline
+The mortality data sets from the Society of Actuaries website contain a column for age and a column for the associated probability of death. It is downloaded as a .csv file and read into a variable, mortality\_data, in this program. A user defined file, simulation\_input.csv, is edited by the user and read into several other variables. This user input file can handle multiple rows of data if the user would like to test several scenarios. 
 
-\begin{lstlisting}[caption={A user-edited file is read into the variable user\_input then each value is extracted from user\_input into individual variables.},captionpos=b,language=R]
+\begin{lstlisting}[caption={This for loop starts the main body of the program and will loop for every line in the simulation\_input.csv file. This shows the first few lines where each value is extracted from input.csv file into individual variables.},captionpos=b,language=R, label={forloop}]
 # Read and assign input parameters
-user_input <- read.csv(file="input.csv", header=TRUE, sep=",")
-input_age_start = user_input[,1]
-input_age_end = user_input[,2]
-maturity_age = user_input[,3]
-monthly_annuity = user_input[,4]
-interest_rate = user_input[,5]
-iterations = user_input[,7]
+for (input_index in 1:length(user_input$age_range_start)) {
+    input_age_start = user_input[input_index,1]
+    input_age_end = user_input[input_index,2]
+    maturity_age = user_input[input_index,3]
+    monthly_annuity = user_input[input_index,4]
+    interest_rate = user_input[input_index,5]
+    iterations = user_input[input_index,6]
+    company_years = user_input[input_index,7]
+    ROI_interest = user_input[input_index,8]
+}
 \end{lstlisting}
 
-With the interest rate stored in a variable, some initial variables that will be used in creating the life table in the next step are calculated.
+After the user input values are stored (Listing \ref{forloop}), the user-defined interest rate is used to calculate some initial variables (Listing \ref{variables}). These variables will be used in creating the life table which will ultimately calculate the annuity expected present values that will be necessary for calculating annuity premiums and running the scenarios.
 \newline
 
-\begin{lstlisting}[caption={Calculating constant variables that will be used in calculations to create the life table.},captionpos=b,language=R]
+\begin{lstlisting}[caption={Calculating constant variables that will be used in calculations to create the life table.},captionpos=b,language=R, label={variables}]
 # Calculated initial variables
 d = interest_rate / (1 + interest_rate)
 im = 12 * (((1 + interest_rate) ** (1 / 12)) - 1)
@@ -143,10 +148,10 @@ b12 = (interest_rate - im) / (im * dm)
 
 % ---------------------- CREATING A LIFE TABLE ------------------------- %
 \section{Creating a Life Table}
-After input is read in, a life table is initialized with the the age and mortality data (qx) that was read in from the .csv from the Society of Actuaries website. Having the initial age and mortality values is necessary to populate the rest of the table columns. 
+After input is read in, a life table is initialized with the the age and mortality data (qx) that was read in from the .csv from the Society of Actuaries website (Listing \ref{lifetable}). Having the initial age and mortality values is necessary to populate the rest of the table columns. 
 \newline
 
-\begin{lstlisting}[caption={The line to create the life table data frame. The values read in from the mortality data table, age and associated mortality, are used to create the rest of the table.},captionpos=b,language=R]
+\begin{lstlisting}[caption={The line to create the life table data frame. The values read in from the mortality data table, age and associated mortality, are used to create the rest of the table.},captionpos=b,language=R,label={lifetable}]
 life_table <- data.frame(age, qx)
 \end{lstlisting}
 
@@ -154,148 +159,178 @@ After the data frame is set a series of calculations is run to set the values fo
 
 \begin{center}
 \begin{equation} \label{insurance}
-A_{x} = \sum^\infty_{k=0}v^{k+1}* _{k}|q_{x}
+A_{x} = \sum^\infty_{k=0}v^{k+1} \cdot _{k}|q_{x}
 \end{equation}
 \textit {Equation \ref{insurance}. The Whole Life Insurance Expected Present Value Equation}
 \end{center}
 
 \begin{center}
 \begin{equation} \label{annuity}
-{\"a}_{x} = \sum^\infty_{k=0}v^{k}* _{k}p_{x}
+{\"a}_{x} = \sum^\infty_{k=0}v^{k} \cdot _{k}p_{x}
 \end{equation}
 \textit {Equation \ref{annuity}. The Whole Life Annuity Expected Present Value Equation}
 \end{center}
 
 % ----------------------- PROFIT FUNCTIONS ------------------------- %
 \section{Profit Functions}
-Functions were created to reuse as the program runs through the simulations (Listing \ref{profitFunc}).
+Functions were created to reuse as the program runs through the simulations and for plotting (Listing \ref{profitFunc}).
 
-\begin{lstlisting}[caption={Three functions to calculate the insurance company's gross profit for whole single net premiums. One calculates the profit (or the premium price), one the loss as annuity payments are made to the policy holder, and one to return the gross profit.},captionpos=b,language=R, label={profitFunc}]
-# Function for determining Whole Life Net Single Premium Profit for company
+\begin{lstlisting}[caption={Functions to calculate each policy holder's premium price and reserve value and a function to find profit values for a given interest rate.},captionpos=b,language=R, label={profitFunc}]
+# Function for determining Whole Life Net Single Premium Policy Price
 #
 # @param in_age The input age for beginning the insurance policy
 # @param mat_age The age in which the policy matures
 # @return A double representing the Net Single Premium that was paid for the policy
-WNS_profit <- function(in_age, mat_age){
-  xEy = (lx[mat_age + 1] / lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
-  return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
+WNS_premium <- function(in_age, mat_age){
+    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
+    return(monthly_annuity * 12 * (a12 * ax[mat_age + 1] - b12) * xEy)
 }
 
-# Function for determining Whole Life Net Single Premium loss for company
-# Occurs only when death_age > maturity_age
-# 
-# @param mat_age The age in which the policy matures
-# @param death_age The age in which the policy holder dies
-# @return A double representing the total paid out to the client for the policy
-WNS_loss <- function(mat_age, death_age)
-  return ((death_age - mat_age) * monthly_annuity * 12)
-
-# Calculate net profit or loss for Whole Life Net Single Premium
+# Function for determining the reserve at time_unit (year)
 #
 # @param in_age The input age for beginning the insurance policy
-# @param mat_age The age in which the policy matures
-# @param death_age The age in which the policy holder dies
-# @return A double representing the net profit or loss for a single policy holder
-WNS_gross_profit <- function(in_age, mat_age, death_age){
-  if (death_age <= maturity_age){
-    return (WNS_profit(in_age, mat_age))
-  }
-  else
-    return (WNS_profit(in_age, mat_age) - WNS_loss(mat_age, death_age))
+# @param time_unit The unit of time (year) that describes the age of the policy
+# @return A double representing the reserve value for the policy at that unit of time
+WNS_reserve <- function(in_age, time_unit){
+    x = in_age
+    Axt = life_table$ax[x + time_unit]
+    return(monthly_annuity * 12 * Axt)
+}
+
+# Function for determining the profit over time for given interests
+#
+# @param interest The input interest rate
+# @return A list of calculated profits
+interests_profit <- function(interest){
+    yearly_interest <- c((1 + (interest/12))**12)
+    f_value <- c(fund_table$fund_value[1])
+    p <- c(fund_table$profit[1])
+    
+    for (year in 2:nrow(fund_table)){
+      yearly_interest <- c(yearly_interest, (1 + (interest/12))**12)
+      f_value <- c(f_value, (f_value[year - 1] * yearly_interest[year]) - fund_table$total_benefit_payout[year])
+      p <- c(p, (f_value[year] - fund_table$total_reserve[year]))
+    }
+    return(p)
 }
 \end{lstlisting}
 
-The first function, WNS\_profit(), will calculate a whole life net single premium for a single policy holder with a unique starting age and maturity age. This value can be used to check the validity of the calculations for the whole program with known data. The second function, WNS\_loss(), calculates and returns any loss from the insurance company if the age of maturity is reached before death of the policy holder. The third function, WNS\_net\_profit(), calculates and returns the combined gross profit and loss for the company for a single policy holder.
+The first function, WNS\_premium(), will calculate a whole life net single premium for a single policy holder with a unique starting age and maturity age. This value can be used to check the validity of the calculations for the whole program with known data. The second function, WNS\_reserve(), calculates the reserve value that the company must consider and subtract from their fund value to find their actual profit value at a given time. The third function, interests\_profit(), calculates a profit value at a given interest rate. This function is used later to plot profit over time with different interest rates.
 
 % ----------------------- SIMULATIONS ------------------------- %
 \section{Simulations}
-With the user-defined input of iterations, this program will generate lifetimes for individual policy holders in a loop (Listing \ref{SimList}). These individuals will have a randomly generated starting age (age they bought the insurance) and death age with a given maturity age to determine the price of the premium and the insurance company's gross profit on that individual's life policy. This simulation loop is set up to test if every client chose the net single premium option. All data generated by this loop is stored in a data frame called policy\_table. This table stores the starting age, maturity age, death age, policy premium price, a logical displaying if the individual died before the maturity date, and the gross profit at the end of the individual's lifetime.
+With the user-defined input of iterations, this program will generate lifetimes for individual policy holders in a loop (Listing \ref{SimList}). These individuals will have a randomly generated starting age (age they bought the insurance) and death age with a given maturity age to determine the price of the premium and the insurance company's reserve on that individual's life policy. This simulation loop is set up as if every client chose the net single premium option. All data generated by this loop is stored in a data frame called lifetimes. This table stores the starting age, maturity age, death age, policy premium price, and a reserve price for each lifetime. Placeholder columns are set for an isDead column and a benefits paid out column to be used in the profit simulation loop later.
 
-\begin{lstlisting}[caption={The loop to run simulations for user-defined number of iterations. Policy starting age is randomly chosen in the age range between age start and age end and the death age is determined by using the mortality percentage form the life table for each year the policy holder lives. Once the death age and start age is determined, the policy premium price and gross profit can be determined.},captionpos=b,language=R, label={SimList}]
+\begin{lstlisting}[caption={The loop to run simulations for user-defined number of iterations. Policy starting age is randomly chosen in the age range between age start and age end and the death age is determined by using the mortality percentage form the life table for each year the policy holder lives. Once the death age and start age is determined, the policy premium price and reserve price can be determined.},captionpos=b,language=R, label={SimList}]
 for(i in 1:iterations) {
-  # Generate random integer starting age
-  if(input_age_start >= input_age_end) {
-    input_age = input_age_start
-  } else {
-    input_age = sample(input_age_start:input_age_end, 1)
-  }
-
-  # Pick a random death date based on mortality table
-  death_age = input_age
-  while(death_age < length(mortality_data$mortality) && runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
-    death_age = death_age + 1
-  }
-  
-  # Add the simulated lifetime to policy table
-  policy_table[nrow(policy_table)+1,] <- c(input_age, 
-                    maturity_age, 
-                    death_age, 
-                    WNS_profit(input_age, maturity_age), 
-                    (death_age <= maturity_age), 
-                    WNS_gross_profit(input_age, maturity_age, death_age))
+    # Generate random integer starting age
+    if(input_age_start >= input_age_end) {
+        input_age = input_age_start
+    } else {
+        input_age = sample(input_age_start:input_age_end, 1)
+    }
+    
+    # Pick a random death date based on mortality table
+    death_age = input_age
+    while(death_age < length(mortality_data$mortality) && 
+          runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
+        death_age = death_age + 1  
+    }
+    
+    # Add the simulated lifetime to policy table
+    lifetimes[nrow(lifetimes) + 1,] <- c(input_age, 
+                                         maturity_age, 
+                                         death_age,
+                                         WNS_profit(input_age, 
+                                                    maturity_age), 
+                                         WNS_reserve(input_age, 1),
+                                         0.0,   # benefits paid out
+                                         FALSE) # isDead?
 } 
 \end{lstlisting}
 
-The second simulation in this program (Listing \ref{ROIList}) determines the projected yearly annual gross income for a user-defined set of years. A .csv file takes user input of number of years, ROI interest, investment percentage, and a yearly sales goal. The yearly sales goal determines how many policies are sold per year of the simulation. Before the loop initiates, the yearly sales goal number of these policies is randomly selected from the pool of individuals that were generated in the lifetime simulation. This sets the year zero profit from "selling" these  policies. Then the investment percentage of this profit is "invested" for year zero. 
+The second simulation in this program (Listing \ref{ROIList}) determines the annual profits for a user-defined set of years. Number of company years to simulate and the ROI interest rate from the user input file are used. The number of lifetimes generated from the previous loop are used to begin the simulation. This sets the year zero reserve value, fund value, and profit from "selling" these  policies.
 
-Once the loop begins, it checks to see if the individual policy holder is still alive and if the age of the policy has reached the maturity date yet. If the maturity date is met and the client is still alive, then this will contribute to a loss for the insurance company, as the annuity payments are paid out. 
+Once the loop begins, it checks to see each individual policy holder is still alive and if the age of the policy has reached the maturity date yet. If the maturity date is not met and the policy holder is alive, the reserve value is updated. If the maturity date is met and the policy holder is alive, then the reserve value is updated and a benefit payout is calculated for that year. If the policy holder is dead at the given year, then the benefit payout and reserve value is set to zero.
 
-After the loss is determined, the number of new policies sold is again randomly selected from the lifetime simulation pool. The new policies are added to the end of the previous policies and the polices age for all older policies is incremented by 1 (year). These new policies will add to yearly profit and a portion equal to the investment percent is added to the amount invested.
-
-Finally, the data generated by this loop is added to a table called ROI\_tracker. This table will show year, total loss (payouts), sold\_policies, ROI (calculated by ROI interest), invested amount, and the final ROI\_adjusted\_profit. The ROI adjusted profite represents the gross annual profit for one year.
+The data generated by this loop is added to a table called fund\_table. This table will show year, total reserve, total number of payouts, total benefit payout value, yearly interest rate, fund value, profit value, number of accumulated deaths, and number of unmatured policies.
 
 \begin{lstlisting}[caption={The for loop for simulating projected profit for a set number of years for the insurance company selling whole single net premium annuities.},captionpos=b,language=R, label={ROIList}]
-for (i in 2:company_years){
-  # checking the current age of the policy holder (if mature, and the policy holder is not dead yet)
-  one_year_loss = 0
-  for (j in 1:nrow(policies)){
-    if (isTRUE(policies$StartAge[j] + policies$policyAge[j] > policies$MatAge[j]) && isTRUE(policies$StartAge[j] + policies$policyAge[j] < policies$DeathAge[j])) {
-      loss <- WNS_loss(policies$MatAge[j], policies$DeathAge[j])
-      one_year_loss = one_year_loss + loss
+# Begin profit simulation loop
+for (year in 2:(company_years + 1)){
+    # For each year, calculate the benefit payout value and reserve
+    # Also keeps track of number of payouts, total deaths, and unmatured policies
+    one_year_payout = 0
+    payouts = 0
+    deaths = 0
+    unmatured = 0
+    for (j in 1:nrow(fund_policies)){
+        matured = (fund_policies$StartAge[j] + year - 1 >
+                   fund_policies$MatAge[j]) # has policy matured?
+        dead = (fund_policies$StartAge[j] + year - 1 >
+                fund_policies$DeathAge[j])  # is policy holder dead?
+        
+        # if not matured and not dead
+        if(isFALSE(matured) && isFALSE(dead)) {
+            fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
+            unmatured = unmatured + 1
+            fund_policies$benefitPayout[j] = 0.0
+         }
+        
+        # if matured and not dead
+        else if(isTRUE(matured) && isFALSE(dead)) {                                                        
+            one_year_payout = 12 * monthly_annuity
+            fund_policies$benefitPayout[j] = one_year_payout
+            fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
+            payouts = payouts + 1
+        }
+        
+        # if dead
+        else if(isTRUE(dead)){
+            deaths = deaths + 1
+            fund_policies$isDead[j] = TRUE
+            fund_policies$Reserve[j] = 0.0
+            fund_policies$benefitPayout[j] = 0.0
+        }
     }
-  }
-  
-  # add new policies sold
-  new_policies <- policy_table[sample(nrow(policy_table),policy_sales_goal),]
-  new_policies$policyAge <- c(0)
-  policies <- rbind(policies,new_policies)
-  policies$policyAge <- policies$policyAge + 1 # increment policy ages
-  
-  # concatenate data from loop to ROI variables
-  year <- c(year, i-1)
-  total_loss <- c(total_loss, one_year_loss)
-  sold_policies <- c(sold_policies, sum(new_policies$PolicyCost))
-  ROI <- c(ROI, invested[i-1] * ROI_interest)
-  # This reinvests the ROI for the year and the investment_percent value of the policies_sale_goal sold for the year
-  invested <- c(invested, ROI[i] + invested[i-1] + (sold_policies[i] * investment_percent))
-  ROI_adjusted_profit <- c(ROI_adjusted_profit, (invested[i] + sold_policies[i] - (sold_policies[i] * investment_percent) - one_year_loss))
-} # End yearly profit projections
+
+    year_num            <- c(year_num, year - 1)
+    total_reserve       <- c(total_reserve, sum(fund_policies$Reserve))
+    num_payouts         <- c(num_payouts, payouts)
+    total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
+    yearly_ROI          <- c(yearly_ROI, (1 + (ROI_interest/12))**12)
+    fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
+    profit              <- c(profit, (fund_value[year] - total_reserve[year]))
+    accumulated_deaths  <- c(accumulated_deaths, deaths)
+    unmatured_policies  <- c(unmatured_policies, unmatured)
+    
+} # End profit simulation loop
 \end{lstlisting}
 
 % ----------------------- GRAPHING ------------------------- %
 \section{Graphing} 
-Four graphs are generated to illustrate some of the output data: a histogram of death ages generated by the simulated lifetimes loop, age effect on the annuity expected present value ({\"a}x), how increasing age with the user-defined maturity age and monthly benefit of net single premium prices, and a projected gross income for a user-defined set of years with sales, investments, ROIs, and paying client's their annuities. Sample output graphs can be seen in the figures \ref{fig:DeathPlot}, \ref{fig:axAgePlot}, \ref{fig:PricesPlot}, and \ref{fig:ROIplot} below.
+Four graphs are generated to illustrate some of the output data: a histogram of death ages generated by the simulated lifetimes loop, monetary values over time, how increasing age with the user-defined maturity age and monthly benefit affects premium prices, and a projected profit value with varying interest rates over time. Sample output graphs can be seen in the Figures \ref{fig:DeathPlot}, \ref{fig:fundplot}, \ref{fig:PricesPlot}, and \ref{fig:profitplot}.
 
 \begin{figure}[H]
   \label{ fig7} 
-  \begin{minipage}[t]{0.45\linewidth}
+  \begin{minipage}[t]{0.47\linewidth}
     \centering
-    \includegraphics[width=.9\linewidth]{DeathPlot.png} 
+    \includegraphics[width=.9\linewidth]{hist_death.png} 
     \caption{Histogram of deaths at a \\
     given age.}
     \label{fig:DeathPlot}
     \vspace{4ex}
   \end{minipage}%%
-  \begin{minipage}[t]{0.45\linewidth}
+  \begin{minipage}[t]{0.47\linewidth}
     \centering
-    \includegraphics[width=.9\linewidth]{axAgePlot.png} 
-    \caption{Annuity expected present value at a given age.}
-    \label{fig:axAgePlot}
+    \includegraphics[width=.9\linewidth]{fund_line_plot.png} 
+    \caption{Benefits paid, reserve value, fund value, and profit over a user-defined set of years.}
+    \label{fig:fundplot}
     \vspace{4ex}
   \end{minipage} 
-  \begin{minipage}[t]{0.45\linewidth}
+  \begin{minipage}[t]{0.47\linewidth}
     \centering
-    \includegraphics[width=.9\linewidth]{PricesPlot.png} 
+    \includegraphics[width=.9\linewidth]{age_premium.png} 
     \caption{Prices of whole life single \\
     net premium at given age range, \\
     maturity age, and desired annuity \\
@@ -303,18 +338,18 @@ Four graphs are generated to illustrate some of the output data: a histogram of 
     \label{fig:PricesPlot}
     \vspace{4ex}
   \end{minipage}%% 
-  \begin{minipage}[t]{0.45\linewidth}
+  \begin{minipage}[t]{0.59\linewidth}
     \centering
-    \includegraphics[width=.9\linewidth]{ROIplot.png} 
-    \caption{Company's projected gross profit per year adjusted with ROI from investments and selling a user-defined number of whole life single net premium policies per year.} 
-    \label{fig:ROIplot}
+    \includegraphics[width=.9\linewidth]{3Dprofit.PNG} 
+    \caption{Company's projected profit for varying interest rates over a user-defined set of years.} 
+    \label{fig:profitplot}
     \vspace{4ex}
   \end{minipage} 
 \end{figure}
 
 % ----------------------- FUTURE CONSIDERATIONS ------------------------- %
 \section{Future Considerations}
-There are a few future considerations for expanding this program. One obvious one would be adding yearly, monthly, and all n-term policy premiums. As it is, this program calculates only whole net single premiums prices. This would probably take a major overhaul of existing code and make it considerably longer. Another small modification might be to have a single, easy way for a user to test just one policy. This is entirely dependant on the user's needs however, but may help if the user wants to give a single client an estimate. A third consideration may be adjusting the loop that forecasts yearly gross profits. As it stands, the profit projection is calculated with an initial set of policy sales but there are no policy holders with a policy age over zero years when the loop starts. This creates data that looks very profitable in the first few years because there are no annuity checks being paid out. However, the data generated can still be useful, and again depends on the user's needs. 
+There are a few future considerations for expanding this program. One obvious one would be adding yearly, monthly, and all term policy premiums. As it is, this program calculates only whole net single premiums prices. This would probably take a major overhaul of existing code and make it considerably longer. Another small modification might be to have a single, easy way for a user to test just one policy. This may help if the user wants to give a single client an estimate. A third consideration may be adding another user input file to be able to run several different mortality tables at once to compare to each other. For instance, the client could compare non-smoker mortality data to smoker mortality data. These are just a few ideas however and implementing these considerations or other ideas would be entirely dependant on the client's needs.
 
 %Have more flexible interest rates, and/or add inflation.
 %Generate maturity ages randomly.
