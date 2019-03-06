@@ -184,7 +184,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   } # End simulate lifetimes
   
   endTime <- Sys.time()
-  elapsedTime <- endTime - startTime
+  elapsedTime <- round(as.numeric(difftime(time1 = endTime, time2 = startTime, units = "secs")), 2)
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 
     
@@ -258,10 +258,6 @@ for (input_index in 1:length(user_input$age_range_start)) {
   
   } # End profit simulation loop
  
-  endTime <- Sys.time()
-  elapsedTime <- endTime - startTime
-  cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
-  
   # Add yearly values to fund_values table
   fund_table <- data.frame(year_num,
                            total_reserve,
@@ -272,6 +268,10 @@ for (input_index in 1:length(user_input$age_range_start)) {
                            profit,
                            accumulated_deaths,
                            unmatured_policies)
+  
+  endTime <- Sys.time()
+  elapsedTime <- round(as.numeric(difftime(time1 = endTime, time2 = startTime, units = "secs")), 2)
+  cat(sprintf("Time elapsed for processing: %s seconds. \n\n", elapsedTime))
   
   
   # ------------------------ Graphing and Saving Output ------------------------------ #
@@ -387,6 +387,6 @@ for (input_index in 1:length(user_input$age_range_start)) {
   write.csv(fund_table, paste(path_name, "profit_projections.csv", sep = ""), row.names = FALSE)
   
   endTime <- Sys.time()
-  elapsedTime <- endTime - startTime
+  elapsedTime <- round(as.numeric(difftime(time1 = endTime, time2 = startTime, units = "secs")), 2)
   cat(sprintf("Time elapsed for processing: %.2f seconds. \n\n", elapsedTime))
 }
