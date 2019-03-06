@@ -14,8 +14,9 @@ library(car)
 library(rgl)
 library(reshape2) # for melting wide data into long data
 
-if(!file.exists("USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv")) {
-  stop("missing mortality table in file \"USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv\"\n")
+mort_file <- "mortality.csv"
+if(!file.exists(mort_file)) {
+  stop("missing mortality table in file " + mort_file + "\n")
   quit(save = "no", status = 1)
 } else if(!file.exists("simulation_input.csv")) {
   stop("missing input file \"simulation_input.csv\"\n")
@@ -26,7 +27,7 @@ if(!dir.exists("output")) {
 }
 
 # Read mortality data
-mortality_data <- read.csv(file = "USLifeTables1999-2000TotalPopulationANB_TableNo2023.csv", header = TRUE, sep = ",")
+mortality_data <- read.csv(file = mort_file, header = TRUE, sep = ",")
 colnames(mortality_data) <- c("age", "mortality")
 age = mortality_data[,1]
 qx = mortality_data[,2]
