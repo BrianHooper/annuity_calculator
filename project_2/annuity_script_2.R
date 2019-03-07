@@ -124,10 +124,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # @return A double representing the reserve value for the policy at that unit of time
   WNS_reserve <- function(in_age, time_unit, mat_age){
     xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
-    if (mat_age + time_unit >= 110){
-      return(monthly_annuity * 12 * (a12 * ax[110] - b12) * xEy)
-    }
-    return(monthly_annuity * 12 * (a12 * ax[mat_age + time_unit] - b12) * xEy)
+    return(monthly_annuity * 12 * (a12 * ax[in_age + time_unit] - b12) * xEy)
     
     # x = in_age
     # axt = life_table$ax[x + time_unit]
@@ -164,7 +161,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
     
     for (year in 2:nrow(fund_table)){
       yearly_interest <- c(yearly_interest, (1 + (interest/12))**12)
-      f_value         <- c(f_value, (f_value[year - 1] * yearly_interest[year]) - fund_table$total_benefit_payout[year])
+      f_value         <- c(f_value, (f_value[year - 1] * yearly_interest[year]) - fund_table$total_benefit_payout[year - 1])
       p               <- c(p, (f_value[year] - fund_table$total_reserve[year]))
     }
     return(p)
@@ -227,8 +224,8 @@ for (input_index in 1:length(user_input$age_range_start)) {
   total_reserve         <- c(sum(fund_policies$Reserve))
   num_payouts           <- c(0)
   total_benefit_payout  <- c(0)
-  yearly_ROI            <- c(0)
-  fund_value            <- c(sum(fund_policies$PolicyCost)) 
+  yearly_ROI            <- c(1 + (ROI_interest/12)**12)
+  fund_value            <- c(sum(fund_policies$PolicyCost) * yearly_ROI[1])
   profit                <- c(fund_value[1] - total_reserve[1])
   accumulated_deaths    <- c(0)
   unmatured_policies    <- c(0)
@@ -275,7 +272,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
     num_payouts         <- c(num_payouts, payouts)
     total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
     yearly_ROI          <- c(yearly_ROI, (1 + (ROI_interest/12))**12)
-    fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
+    fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year - 1])
     profit              <- c(profit, (fund_value[year] - total_reserve[year]))
     #profit              <- c(profit, ((total_reserve[year - 1] - total_benefit_payout[year]) * yearly_ROI[year]) - total_reserve[year])
     accumulated_deaths  <- c(accumulated_deaths, deaths)
