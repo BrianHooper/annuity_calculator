@@ -122,11 +122,36 @@ for (input_index in 1:length(user_input$age_range_start)) {
   # @param in_age The input age for beginning the insurance policy
   # @param time_unit The unit of time (year) that describes the age of the policy
   # @return A double representing the reserve value for the policy at that unit of time
-  WNS_reserve <- function(in_age, time_unit){
-    x = in_age
-    Axt = life_table$ax[x + time_unit]
-    return(monthly_annuity * 12 * Axt)
-  }
+  WNS_reserve <- function(in_age, time_unit, mat_age){
+    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
+    if (mat_age + time_unit >= 110){
+      return(monthly_annuity * 12 * (a12 * ax[110] - b12) * xEy)
+    }
+    return(monthly_annuity * 12 * (a12 * ax[mat_age + time_unit] - b12) * xEy)
+    
+    # x = in_age
+    # axt = life_table$ax[x + time_unit]
+    # return(monthly_annuity * 12 * axt)
+    
+    #return(WNS_premium(in_age, mat_age) - monthly_annuity)
+  } 
+    # if(time_unit == 0){
+    #   current_premium <- WNS_premium(in_age, mat_age)
+    #   return (current_premium - (monthly_annuity * 12))
+    # }
+    # else{
+    #   tV = WNS_reserve(in_age, time_unit - 1, mat_age)
+    #   #current_premium <- WNS_premium(in_age, mat_age)
+    #   return(tV)
+    
+    
+    # else{
+    #   current_reserve = WNS_reserve(in_age, time_unit - 1, mat_age)
+    #   return(current_reserve * (1 + interest_rate) - current_premium)
+    # }
+
+    #return(current_premium - monthly_annuity * 12)
+  #}
   
   # Function for determining the profit over time for given interests
   #
@@ -178,7 +203,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
                                          maturity_age, 
                                          death_age,
                                          WNS_premium(input_age, maturity_age), 
-                                         WNS_reserve(input_age, 1),
+                                         WNS_reserve(input_age, 0, maturity_age),
                                          0.0,   # benefits paid out
                                          FALSE) # isDead?
   } # End simulate lifetimes
@@ -223,7 +248,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
       
       # if not matured and not dead
       if(isFALSE(matured) && isFALSE(dead)) {
-        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
+        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1, fund_policies$MatAge[j])
         unmatured = unmatured + 1
         fund_policies$benefitPayout[j] = 0.0
       }
@@ -232,7 +257,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
       else if(isTRUE(matured) && isFALSE(dead)) {                                                        
         one_year_payout = 12 * monthly_annuity
         fund_policies$benefitPayout[j] = one_year_payout
-        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
+        fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1,  fund_policies$MatAge[j])
         payouts = payouts + 1
       }
 
@@ -252,6 +277,7 @@ for (input_index in 1:length(user_input$age_range_start)) {
     yearly_ROI          <- c(yearly_ROI, (1 + (ROI_interest/12))**12)
     fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
     profit              <- c(profit, (fund_value[year] - total_reserve[year]))
+    #profit              <- c(profit, ((total_reserve[year - 1] - total_benefit_payout[year]) * yearly_ROI[year]) - total_reserve[year])
     accumulated_deaths  <- c(accumulated_deaths, deaths)
     unmatured_policies  <- c(unmatured_policies, unmatured)
     
