@@ -191,11 +191,10 @@ WNS_premium <- function(in_age, mat_age){
 # @param in_age The input age for beginning the insurance policy
 # @param time_unit The unit of time (year) that describes the age of the policy
 # @return A double representing the reserve value for the policy at that unit of time
-WNS_reserve <- function(in_age, time_unit){
-    x = in_age
-    Axt = life_table$ax[x + time_unit]
-    return(monthly_annuity * 12 * Axt)
-}
+WNS_reserve <- function(in_age, time_unit, mat_age){
+    xEy = (life_table$lx[mat_age + 1] / life_table$lx[in_age + 1]) * (1 / (1 + interest_rate)) ** (mat_age - in_age)
+    return(monthly_annuity * 12 * (a12 * ax[in_age + time_unit] - b12) * xEy)
+} 
 
 # Function for determining the profit over time for given interests
 #
@@ -215,7 +214,33 @@ interests_profit <- function(interest){
 }
 \end{lstlisting}
 
-The first function, WNS\_premium(), will calculate a whole life net single premium for a single policy holder with a unique starting age and maturity age. This value can be used to check the validity of the calculations for the whole program with known data. The second function, WNS\_reserve(), calculates the reserve value that the company must consider and subtract from their fund value to find their actual profit value at a given time. The third function, interests\_profit(), calculates a profit value at a given interest rate. This function is used later to plot profit over time with different interest rates.
+The first function, WNS\_premium(), will calculate a whole life net single premium for a single policy holder with a unique starting age and maturity age. With known data, this value can be used to check the validity of the calculations that were used to create the life table. To find the premium price, the value xEy is first calculated with Equation \ref{xEy} and then the $\"a$ variable is chosen from the life table at maturity age plus 1. These two values are used with the a12 and b12 values (from Listing \ref{variables}) and the benefit value as input for Equation \ref{premium} to calculate the whole net single premium annuity price. 
+
+\begin{center}
+\begin{equation} \label{xEy}
+xEy = \frac{l_{m + 1}}{l_{s + 1}} \cdot \left(\frac{1}{(1 + i)}\right)^{m - s}
+\end{equation}
+\end{center}
+\textit {Equation \ref{xEy}. Equation used to calculate the value xEy needed to calculate the annuity premium price. The variable l is from the $l_x$ column of the life table, m is maturity age, s is policy start age, and i is interest rate.}
+
+\begin{center}
+\begin{equation} \label{premium}
+p = b \cdot (a12 \cdot {\"a}_{m + 1} - b12) \cdot xEy)
+\end{equation}
+\end{center}
+\textit {Equation \ref{premium}. Equation used to calculate the whole net single premium for annuity where p is the premium price, b is the annual benefit payout, and m is maturity age. The values for a12 and b12 are obtained using the equations in Listing \ref{variables} and the xEy is calculated using Equation \ref{xEy}.}\\
+
+The second function, WNS\_reserve(), calculates the reserve value that the company must consider and subtract from their fund value to find their actual profit value at a given time. The calculation for reserve is the same as the calculation used for the premium price except that the $\"a$ variable is chosen from the life table at the location of policy start age plus the given time (years) (Equation \ref{reserve}).
+
+\begin{center}
+\begin{equation} \label{reserve}
+r = b \cdot (a12 \cdot {\"a}_{s + t} - b12) \cdot xEy)
+\end{equation}
+\end{center}
+\textit {Equation \ref{reserve}. Equation used to calculate the reserve for annuity at time t, where p is the reserve price, b is the annual benefit payout, and s is the policy start age. The values for a12 and b12 are obtained using the equations in Listing \ref{variables} and the xEy is calculated using Equation \ref{xEy}.}\\
+
+The third function, interests\_profit(), calculates a profit value at a given interest rate. It uses the data from the fund\_table generated in the profit projection simulation in Listing \ref{ROIList}. The values of this function are used to generate a 3D surface plot to look at profit over time at different interest rates (Figure \ref{fig:profitplot}).
+
 
 % ----------------------- SIMULATIONS ------------------------- %
 \section{Simulations}
@@ -234,75 +259,75 @@ for(i in 1:iterations) {
     death_age = input_age
     while(death_age < length(mortality_data$mortality) && 
           runif(1, 0.0, 1.0) > mortality_data$mortality[death_age]) {
-        death_age = death_age + 1  
+      death_age = death_age + 1  
     }
     
     # Add the simulated lifetime to policy table
     lifetimes[nrow(lifetimes) + 1,] <- c(input_age, 
                                          maturity_age, 
                                          death_age,
-                                         WNS_profit(input_age, 
-                                                    maturity_age), 
-                                         WNS_reserve(input_age, 1),
+                                         WNS_premium(input_age,
+                                                     maturity_age), 
+                                         WNS_reserve(input_age, 
+                                                     0, # time zero
+                                                     maturity_age),
                                          0.0,   # benefits paid out
                                          FALSE) # isDead?
-} 
+  } # End simulate lifetimes
 \end{lstlisting}
 
 The second simulation in this program (Listing \ref{ROIList}) determines the annual profits for a user-defined set of years. Number of company years to simulate and the ROI interest rate from the user input file are used. The number of lifetimes generated from the previous loop are used to begin the simulation. This sets the year zero reserve value, fund value, and profit from "selling" these  policies.
 
 Once the loop begins, it checks to see each individual policy holder is still alive and if the age of the policy has reached the maturity date yet. If the maturity date is not met and the policy holder is alive, the reserve value is updated. If the maturity date is met and the policy holder is alive, then the reserve value is updated and a benefit payout is calculated for that year. If the policy holder is dead at the given year, then the benefit payout and reserve value is set to zero.
 
-The data generated by this loop is added to a table called fund\_table. This table will show year, total reserve, total number of payouts, total benefit payout value, yearly interest rate, fund value, profit value, number of accumulated deaths, and number of unmatured policies.
+The data generated by this loop is added to a table called fund\_table. This table will show year, total reserve, total number of payouts, total benefit payout value, yearly interest rate, fund value, profit value, number of accumulated deaths, and number of unmatured policies. The fund value in a given year is calculated by taking the fund value of the previous year, multiplying it by interest, then subtracting any benefits paid out in the previous year. The profit value is then calculated by taking the fund value of the given year and subtracting the total reserve for the given year.
 
 \begin{lstlisting}[caption={The for loop for simulating projected profit for a set number of years for the insurance company selling whole single net premium annuities.},captionpos=b,language=R, label={ROIList}]
 # Begin profit simulation loop
 for (year in 2:(company_years + 1)){
-    # For each year, calculate the benefit payout value and reserve
-    # Also keeps track of number of payouts, total deaths, and unmatured policies
-    one_year_payout = 0
-    payouts = 0
-    deaths = 0
-    unmatured = 0
-    for (j in 1:nrow(fund_policies)){
-        matured = (fund_policies$StartAge[j] + year - 1 >
-                   fund_policies$MatAge[j]) # has policy matured?
-        dead = (fund_policies$StartAge[j] + year - 1 >
-                fund_policies$DeathAge[j])  # is policy holder dead?
-        
-        # if not matured and not dead
-        if(isFALSE(matured) && isFALSE(dead)) {
-            fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
-            unmatured = unmatured + 1
-            fund_policies$benefitPayout[j] = 0.0
-         }
-        
-        # if matured and not dead
-        else if(isTRUE(matured) && isFALSE(dead)) {                                                        
-            one_year_payout = 12 * monthly_annuity
-            fund_policies$benefitPayout[j] = one_year_payout
-            fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1)
-            payouts = payouts + 1
-        }
-        
-        # if dead
-        else if(isTRUE(dead)){
-            deaths = deaths + 1
-            fund_policies$isDead[j] = TRUE
-            fund_policies$Reserve[j] = 0.0
-            fund_policies$benefitPayout[j] = 0.0
-        }
-    }
+   # For each year, calculate the benefit payout value and reserve
+   # Also keeps track of number of payouts, total deaths, and unmatured policies
+   one_year_payout = 0
+   payouts = 0
+   deaths = 0
+   unmatured = 0
+   for (j in 1:nrow(fund_policies)){
+      matured = (fund_policies$StartAge[j] + year - 1 > fund_policies$MatAge[j])  # has the policy matured?
+      dead = (fund_policies$StartAge[j] + year - 1 > fund_policies$DeathAge[j])   # has the policy holder died?
+     
+      # if not matured and not dead
+      if(isFALSE(matured) && isFALSE(dead)) {
+          fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1, fund_policies$MatAge[j])
+          unmatured = unmatured + 1
+          fund_policies$benefitPayout[j] = 0.0
+       }
+     
+      # if matured and not dead
+      else if(isTRUE(matured) && isFALSE(dead)) {                                                        
+          one_year_payout = 12 * monthly_annuity
+          fund_policies$benefitPayout[j] = one_year_payout
+          fund_policies$Reserve[j] = WNS_reserve(fund_policies$StartAge[j], year - 1, fund_policies$MatAge[j])
+          payouts = payouts + 1
+       }
 
-    year_num            <- c(year_num, year - 1)
-    total_reserve       <- c(total_reserve, sum(fund_policies$Reserve))
-    num_payouts         <- c(num_payouts, payouts)
-    total_benefit_payout<- c(total_benefit_payout, sum(fund_policies$benefitPayout))
-    yearly_ROI          <- c(yearly_ROI, (1 + (ROI_interest/12))**12)
-    fund_value          <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year])
-    profit              <- c(profit, (fund_value[year] - total_reserve[year]))
-    accumulated_deaths  <- c(accumulated_deaths, deaths)
-    unmatured_policies  <- c(unmatured_policies, unmatured)
+      # if dead
+      else if(isTRUE(dead)){
+          deaths = deaths + 1
+          fund_policies$isDead[j] = TRUE
+          fund_policies$Reserve[j] = 0.0
+          fund_policies$benefitPayout[j] = 0.0
+      }
+   }
+
+    year_num <- c(year_num, year - 1)
+    total_reserve <- c(total_reserve, sum(fund_policies$Reserve))
+    num_payouts <- c(num_payouts, payouts)
+    total_benefit_payout <- c(total_benefit_payout, sum(fund_policies$benefitPayout))
+    yearly_ROI <- c(yearly_ROI, (1 + (ROI_interest/12))**12)
+    fund_value <- c(fund_value, (fund_value[year - 1] * yearly_ROI[year]) - total_benefit_payout[year - 1])
+    profit <- c(profit, (fund_value[year] - total_reserve[year]))
+    accumulated_deaths <- c(accumulated_deaths, deaths)
+    unmatured_policies <- c(unmatured_policies, unmatured)
     
 } # End profit simulation loop
 \end{lstlisting}
